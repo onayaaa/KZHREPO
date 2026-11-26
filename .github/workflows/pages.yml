@@ -32,8 +32,12 @@ jobs:
       - name: Build data from xlsx
         run: python tools/build_site.py
 
+      # enablement: true → Pages が未設定でもこのステップで有効化する
+      # （Settings → Pages → Source = GitHub Actions を手で押したのと同じ状態になる）
       - name: Configure Pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - name: Upload site
         uses: actions/upload-pages-artifact@v3

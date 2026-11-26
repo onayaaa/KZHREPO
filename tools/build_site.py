@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-葛葉仓库 2018-2026 xlsx -> site/assets/data/*.js
+kzhdata/葛葉仓库 2018-2026 xlsx -> site/assets/data/*.js
 
 用法:
   <bundled-python> tools/build_site.py
@@ -24,6 +24,7 @@ from collections import Counter, OrderedDict, defaultdict
 import openpyxl
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = os.path.join(ROOT, "kzhdata")
 OUT_DIR = os.path.join(ROOT, "site", "assets", "data")
 REPORT = []
 
@@ -543,9 +544,9 @@ def main():
     file_info = []
 
     for year in range(2018, 2027):
-        path = os.path.join(ROOT, "葛葉仓库{}.xlsx".format(year))
+        path = os.path.join(DATA_DIR, "葛葉仓库{}.xlsx".format(year))
         if not os.path.exists(path):
-            ctx["errors"].append("缺少文件: 葛葉仓库{}".format(year))
+            ctx["errors"].append("缺少文件: kzhdata/葛葉仓库{}.xlsx".format(year))
             continue
         wb = load_workbook(path)
         months_found = []
@@ -590,7 +591,7 @@ def main():
                     renzoku_hours[k] = renzoku_hours.get(k, 0.0) + v
         file_info.append(
             {
-                "file": "葛葉仓库{}.xlsx".format(year),
+                "file": "kzhdata/葛葉仓库{}.xlsx".format(year),
                 "months": ", ".join(months_found),
                 "streams": year_streams,
             }
