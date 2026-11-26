@@ -1,0 +1,7 @@
+.dsh/
+.tmp/
+__pycache__/
+*.pyc
+site/assets/data/build-error.txt
+.DS_Store
+Thumbs.db

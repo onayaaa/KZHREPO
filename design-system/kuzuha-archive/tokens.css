@@ -1,0 +1,43 @@
+/* Design Tokens - Auto-generated */
+/* Do not edit directly - modify tokens.json instead */
+/* 2026-11-26: ユーザー要望によりベーステーマを黒 + クリムゾンへ変更（旧 Gaming パレットの紫は廃止）。
+   下の SEMANTIC の値が現在の正であり、site/assets/css/site.css の :root と一致させている。 */
+
+/* === PRIMITIVES === */
+:root {
+
+}
+
+/* === SEMANTIC === */
+:root {
+  --color-primary: #E11D48;
+  --color-on-primary: #FFFFFF;
+  --color-secondary: #FB7185;
+  --color-on-secondary: #FFFFFF;
+  --color-accent: #FF3B5C;
+  --color-on-accent: #000000;
+  --color-background: #08070A;
+  --color-foreground: #F3EEF0;
+  --color-card: #141114;
+  --color-card-foreground: #F3EEF0;
+  --color-muted: #211A1E;
+  --color-muted-foreground: #B5A9AE;
+  --color-border: #7A1229;
+  --color-destructive: #EF4444;
+  --color-on-destructive: #000000;
+  --color-ring: #E11D48;
+  --font-heading: "Russo One", sans-serif;
+  --font-body: "Chakra Petch", sans-serif;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+}
+
+/* === COMPONENTS === */
+:root {
+
+}

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>葛葉 データアーカイブ｜2018–2026</title>
+<meta name="description" content="にじさんじ所属のVTuber・葛葉について、2018年から2026年までの配信記録・楽曲・大会・コラボ相手を整理した非公式のデータアーカイブです。">
+<meta name="theme-color" content="#08070A">
+<meta property="og:title" content="葛葉 データアーカイブ">
+<meta property="og:description" content="2018–2026 の記録からたどる、葛葉の配信・歌・大会・コラボ相手。">
+<meta property="og:type" content="website">
+<link rel="preload" href="assets/fonts/russo-latin-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/chakra-latin-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/css/site.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2308070A'/%3E%3Cpath d='M6 8c3 1 5 3 5 6 2-2 4-2 5 0 1-2 3-2 5 0 0-3 2-5 5-6-1 8-5 14-10 17C11 22 7 16 6 8z' fill='%23E11D48'/%3E%3C/svg%3E">
+</head>
+<body>
+<a class="skip-link" href="#main">本文へ移動</a>
+<div class="bg-glow" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" href="#/summary">
+      <span class="brand-sigil" aria-hidden="true">
+        <svg viewBox="0 0 40 40" focusable="false">
+          <defs>
+            <linearGradient id="sigilGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#FF8FA0"/><stop offset="1" stop-color="#7A1229"/>
+            </linearGradient>
+          </defs>
+          <path d="M7 9c4 1.4 6.6 4 6.8 8 2.2-2.6 5.4-2.6 7.4 0 1.9-2.6 5.1-2.6 7.3 0 .3-4 2.9-6.6 6.5-8-1.2 10.4-6.2 18.4-13.9 22.4C13.4 27.4 8.3 19.4 7 9z" fill="url(#sigilGrad)"/>
+        </svg>
+      </span>
+      <span class="brand-text">
+        <b>葛葉</b>
+        <small>KUZUHA DATA ARCHIVE</small>
+      </span>
+    </a>
+
+    <nav class="nav" aria-label="主要ナビゲーション">
+      <a href="#/summary" data-nav="summary">概要</a>
+      <a href="#/streams" data-nav="streams">配信</a>
+      <a href="#/songs" data-nav="songs">歌</a>
+      <a href="#/events" data-nav="events">大会・企画</a>
+      <a href="#/collabs" data-nav="collabs">コラボ相手</a>
+    </nav>
+
+    <div class="header-tools">
+      <div class="combo combo-search" id="site-combo" data-combo>
+        <svg class="combo-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="9" cy="9" r="6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M13.5 13.5 18 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <input id="site-search" type="text" placeholder="コラボ相手・配信を検索" aria-label="コラボ相手や配信を検索" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="false" aria-controls="site-suggest" aria-autocomplete="list">
+        <button type="button" class="combo-clear" id="site-search-clear" aria-label="検索をクリア" hidden>
+          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+        <div class="suggest" id="site-suggest" role="listbox" aria-label="検索候補" hidden></div>
+      </div>
+      <button type="button" class="rail-toggle" id="rail-toggle" aria-expanded="false" aria-controls="rail">絞り込み</button>
+    </div>
+  </div>
+  <div class="year-strip" id="year-strip" role="group" aria-label="年で絞り込む"></div>
+</header>
+
+<div class="layout">
+  <aside class="rail" id="rail" aria-label="絞り込み条件"></aside>
+  <main id="main" class="content" tabindex="-1">
+    <noscript>
+      <div class="panel notice">
+        <h2>JavaScript を有効にしてください</h2>
+        <p>このアーカイブは、配信・楽曲・大会のデータをブラウザ上で読み込んで表示します。JavaScript を有効にすると閲覧できます。</p>
+      </div>
+    </noscript>
+    <div id="view"></div>
+  </main>
+</div>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <b>葛葉 データアーカイブ</b>
+      <p>2018–2026 の活動記録を整理した、非公式のファンアーカイブです。掲載内容の正確性は保証しません。各動画・楽曲の権利は権利者に帰属します。</p>
+    </div>
+    <div class="footer-meta">
+      <p>データ出典：葛葉倉庫 2018–2026（個人管理の記録）</p>
+      <p>最終更新：<span id="build-date">—</span></p>
+    </div>
+  </div>
+</footer>
+
+<div class="tooltip" id="tooltip" role="presentation" aria-hidden="true"></div>
+
+<script src="assets/data/meta.js"></script>
+<script src="assets/data/stats.js"></script>
+<script src="assets/data/partners.js"></script>
+<script src="assets/data/songs.js"></script>
+<script src="assets/data/events.js"></script>
+<script src="assets/data/goods.js"></script>
+<script src="assets/js/charts.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>
