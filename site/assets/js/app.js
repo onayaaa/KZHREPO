@@ -14,7 +14,7 @@
 
   /* 静的資産のキャッシュ版数（index.html の ?v= と揃える。
      前端ファイルを変更したら index.html とここを同時に +1 する） */
-  var ASSET_V = "8";
+  var ASSET_V = "10";
 
   function t(key, vars) {
     return I18N ? I18N.t(key, vars) : key;
@@ -281,177 +281,6 @@
       navState.lastFocus = null;
       if (back && back.focus && back !== document.body) back.focus();
     }
-  }
-
-  /* ------------------------------------------------ header global search */
-  var suggest = { items: [], active: -1, open: false };
-
-  function siteSearchInput() {
-    return document.getElementById("site-search");
-  }
-
-  function searchBox() {
-    return document.getElementById("search-box");
-  }
-
-  function openSearch() {
-    var box = searchBox();
-    var toggle = document.getElementById("search-toggle");
-    if (!box) return;
-    box.hidden = false;
-    if (toggle) toggle.setAttribute("aria-expanded", "true");
-    var input = siteSearchInput();
-    if (input && input.focus) input.focus();
-  }
-
-  function closeSearch() {
-    closeSuggest();
-    var box = searchBox();
-    var toggle = document.getElementById("search-toggle");
-    if (box) box.hidden = true;
-    if (toggle) toggle.setAttribute("aria-expanded", "false");
-  }
-
-  function closeSuggest() {
-    var box = document.getElementById("site-suggest");
-    var input = siteSearchInput();
-    suggest.open = false;
-    suggest.active = -1;
-    if (box) {
-      box.hidden = true;
-      box.innerHTML = "";
-    }
-    if (input && input.setAttribute) input.setAttribute("aria-expanded", "false");
-  }
-
-  function partnerHits(q) {
-    var needle = q.toLowerCase();
-    var hits = partners.filter(function (p) {
-      return p.n.toLowerCase().indexOf(needle) >= 0;
-    });
-    hits.sort(function (a, b) {
-      var pa = a.n.toLowerCase().indexOf(needle) === 0 ? 0 : 1;
-      var pb = b.n.toLowerCase().indexOf(needle) === 0 ? 0 : 1;
-      if (pa !== pb) return pa - pb;
-      return b.s - a.s;
-    });
-    return hits.slice(0, 5);
-  }
-
-  function streamHits(q) {
-    if (!streams) return [];
-    var needle = q.toLowerCase();
-    var out = [];
-    for (var i = 0; i < streams.length && out.length < 8; i++) {
-      var s = streams[i];
-      if (((s.t || "") + " " + (s.c || "") + " " + (s.e || "")).toLowerCase().indexOf(needle) >= 0) out.push(s);
-    }
-    return out;
-  }
-
-  function buildSuggest(q) {
-    var items = [];
-    partnerHits(q).forEach(function (p) {
-      items.push({ k: "partner", label: p.n, sub: num(p.s) + " " + t("unit.times") + " ・ " + hoursText(p.h, 1), value: p.n });
-    });
-    streamHits(q).forEach(function (s) {
-      items.push({ k: "stream", label: s.t, sub: fdate(s.d) + " ・ " + (s.c || s.e || ""), value: s.t });
-    });
-    return items;
-  }
-
-  function drawSuggest(items, q) {
-    var box = document.getElementById("site-suggest");
-    var input = siteSearchInput();
-    if (!box || !input) return;
-    var html = "";
-    var lastKind = "";
-    items.forEach(function (it, i) {
-      if (it.k !== lastKind) {
-        html +=
-          '<div class="suggest-group" role="presentation">' +
-          esc(it.k === "partner" ? t("search.group.partner") : t("search.group.stream")) +
-          "</div>";
-        lastKind = it.k;
-      }
-      html +=
-        '<button type="button" class="suggest-item' + (i === suggest.active ? " is-active" : "") +
-        '" role="option" id="sug-' + i + '" aria-selected="' + (i === suggest.active ? "true" : "false") +
-        '" data-act="suggest" data-i="' + i + '">' +
-        '<span class="s-label">' + esc(it.label) + "</span>" +
-        '<span class="s-sub">' + esc(it.sub) + "</span></button>";
-    });
-    if (!items.length) html = '<p class="suggest-note">' + esc(t("search.none", { q: q })) + "</p>";
-    if (!streams && q) html += '<p class="suggest-note">' + esc(t("search.loading")) + "</p>";
-    box.innerHTML = html;
-    box.hidden = false;
-    input.setAttribute("aria-expanded", "true");
-    suggest.open = true;
-  }
-
-  function refreshSuggest() {
-    var input = siteSearchInput();
-    if (!input) return;
-    var q = input.value.trim();
-    if (!q) {
-      closeSuggest();
-      return;
-    }
-    suggest.items = buildSuggest(q);
-    suggest.active = -1;
-    drawSuggest(suggest.items, q);
-    if (!streams) {
-      ensureStreams()
-        .then(function () {
-          if (!suggest.open || !siteSearchInput()) return;
-          if (siteSearchInput().value.trim() !== q) return;
-          suggest.items = buildSuggest(q);
-          drawSuggest(suggest.items, q);
-        })
-        .catch(function () {});
-    }
-  }
-
-  function activateSuggest(i) {
-    var it = suggest.items[i];
-    if (!it) return false;
-    var input = siteSearchInput();
-    closeSuggest();
-    if (it.k === "partner") {
-      if (input) input.value = it.value;
-      var toStreams = state.route === "summary";
-      navigate(toStreams ? "streams" : state.route, { p: it.value, y: "", m: "", c: "", t: "", q: "" });
-    } else {
-      if (input) input.value = "";
-      navigate("streams", { q: it.value, p: "", y: "", m: "", c: "", t: "" });
-    }
-    closeSearch();
-    return true;
-  }
-
-  function submitSiteSearch() {
-    var input = siteSearchInput();
-    if (!input) return;
-    var q = input.value.trim();
-    if (!q) return;
-    if (suggest.active >= 0 && activateSuggest(suggest.active)) return;
-    var ph = partnerHits(q);
-    if (ph.length) {
-      input.value = ph[0].n;
-      closeSuggest();
-      closeSearch();
-      setPartner(ph[0].n);
-      return;
-    }
-    closeSuggest();
-    closeSearch();
-    navigate("streams", { q: q, p: "", y: "", m: "", c: "", t: "" });
-  }
-
-  function renderSiteSearch() {
-    var clear = document.getElementById("site-search-clear");
-    var input = siteSearchInput();
-    if (clear) clear.hidden = !(input && input.value);
   }
 
   /* ----------------------------------------------------------- filter bar */
@@ -1715,7 +1544,6 @@
 
   function render() {
     renderChrome();
-    renderSiteSearch();
     renderFilters();
     renderContent();
   }
@@ -1730,10 +1558,6 @@
   function handleAction(el) {
     var act = el.getAttribute("data-act");
     var v = el.getAttribute("data-v");
-    if (act === "suggest") {
-      activateSuggest(Number(el.getAttribute("data-i")));
-      return;
-    }
     if (act === "year") {
       var y = el.getAttribute("data-y");
       if (y == null) y = el.getAttribute("data-v") || "";
@@ -1782,16 +1606,13 @@
       renderContent();
     } else if (act === "clear") {
       Object.assign(state, { p: "", y: "", m: "", c: "", t: "", q: "", u: "", r: "", n: "", limit: 60 });
-      var input = siteSearchInput();
-      if (input) input.value = "";
-      closeSuggest();
       syncUrl();
       render();
     } else if (act === "more") {
       state.limit += 60;
       renderContent();
     }
-    if (act !== "suggest" && act !== "more" && act !== "tags" && act !== "heatyear") closeMenu();
+    if (act !== "more" && act !== "tags" && act !== "heatyear") closeMenu();
   }
 
   function bindNav() {
@@ -1839,82 +1660,69 @@
       if (sel.getAttribute("data-act") === "sortsel2") setState({ sort: sel.value, limit: 60 });
     });
 
-    var toggle = document.getElementById("search-toggle");
-    if (toggle) {
-      toggle.addEventListener("click", function () {
-        var box = searchBox();
-        if (box && !box.hidden) closeSearch();
-        else openSearch();
-      });
-    }
-
-    var searchInput = siteSearchInput();
-    if (searchInput) {
-      var suggestTimer = null;
-      searchInput.addEventListener("input", function () {
-        var clear = document.getElementById("site-search-clear");
-        if (clear) clear.hidden = !searchInput.value.trim();
-        clearTimeout(suggestTimer);
-        suggestTimer = setTimeout(refreshSuggest, 110);
-      });
-      searchInput.addEventListener("focus", function () {
-        if (searchInput.value.trim()) refreshSuggest();
-      });
-      searchInput.addEventListener("keydown", function (ev) {
-        if (ev.key === "Enter") {
-          ev.preventDefault();
-          submitSiteSearch();
-          return;
-        }
-        if (ev.key === "Escape") {
-          closeSuggest();
-          if (!searchInput.value) closeSearch();
-          return;
-        }
-        if (ev.key === "ArrowDown" || ev.key === "ArrowUp") {
-          if (!suggest.open) refreshSuggest();
-          if (!suggest.items.length) return;
-          ev.preventDefault();
-          var n = suggest.items.length;
-          suggest.active =
-            ev.key === "ArrowDown" ? (suggest.active + 1) % n : suggest.active <= 0 ? n - 1 : suggest.active - 1;
-          drawSuggest(suggest.items, searchInput.value.trim());
-        }
-      });
-    }
-
-    var searchClear = document.getElementById("site-search-clear");
-    if (searchClear) {
-      searchClear.addEventListener("click", function () {
-        if (searchInput) searchInput.value = "";
-        closeSuggest();
-        if (state.p || state.q) setState({ p: "", q: "" });
-      });
-    }
-
-    document.addEventListener("click", function (ev) {
-      var search = document.getElementById("search");
-      if (search && !search.contains(ev.target)) closeSuggest();
-    });
-
     var searchTimer = null;
+    var composing = false;
+
+    function restoreSearchFocus() {
+      var el = document.getElementById("search-input");
+      if (!el || !el.focus) return;
+      el.focus();
+      var end = el.value.length;
+      if (el.setSelectionRange) el.setSelectionRange(end, end);
+    }
+
+    function applyPageSearch(v) {
+      clearTimeout(searchTimer);
+      if (v === state.q) return;
+      var hadFocus = document.activeElement && document.activeElement.id === "search-input";
+      state.q = v;
+      state.limit = 60;
+      syncUrl();
+      renderContent();
+      if (hadFocus) restoreSearchFocus();
+    }
+
+    // 日本語入力の変換中は描き直さない（入力欄が作り直されて変換が途切れるため）。
+    document.addEventListener(
+      "compositionstart",
+      function (ev) {
+        if (ev.target && ev.target.id === "search-input") composing = true;
+      },
+      true
+    );
+
+    document.addEventListener(
+      "compositionend",
+      function (ev) {
+        if (ev.target && ev.target.id === "search-input") {
+          composing = false;
+          applyPageSearch(ev.target.value);
+        }
+      },
+      true
+    );
+
     document.addEventListener("input", function (ev) {
       if (ev.target.id !== "search-input") return;
+      if (composing || ev.isComposing) return;
       clearTimeout(searchTimer);
       var v = ev.target.value;
       searchTimer = setTimeout(function () {
-        state.q = v;
-        state.limit = 60;
-        syncUrl();
-        renderContent();
-      }, 180);
+        applyPageSearch(v);
+      }, 260);
+    });
+
+    document.addEventListener("keydown", function (ev) {
+      if (ev.target.id !== "search-input") return;
+      if (ev.key !== "Enter" || ev.isComposing) return;
+      ev.preventDefault();
+      applyPageSearch(ev.target.value);
     });
 
     bindFilterMenus();
     bindNav();
 
     window.addEventListener("hashchange", function () {
-      closeSuggest();
       closeMenu();
       setNav(false);
       var parsed = parseHash();
@@ -1940,10 +1748,6 @@
 
   /* ----------------------------------------------------------------- boot */
   function setStaticIcons() {
-    var st = document.getElementById("search-toggle");
-    if (st) st.innerHTML = ICON("search");
-    var sc = document.getElementById("site-search-clear");
-    if (sc) sc.innerHTML = ICON("x");
     var nt = document.getElementById("nav-toggle");
     if (nt) nt.innerHTML = ICON("menu");
   }

@@ -304,113 +304,6 @@ body.is-nav-open {
   overflow: hidden;
 }
 
-/* ---------------------------------------------------------------- search */
-
-.search {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.search-box {
-  display: flex;
-  align-items: center;
-  gap: var(--s2);
-  width: 280px;
-  height: 40px;
-  padding: 0 var(--s2) 0 var(--s3);
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  background: var(--bg);
-}
-
-.search-box[hidden] {
-  display: none;
-}
-
-#site-search {
-  flex: 1;
-  min-width: 0;
-  border: 0;
-  outline: 0;
-  background: none;
-  font-family: var(--font);
-  font-size: 14px;
-  font-weight: 400;
-  color: var(--ink);
-}
-
-#site-search::placeholder {
-  color: var(--ink-3);
-}
-
-.search-clear .icon {
-  width: 24px;
-  height: 24px;
-}
-
-.suggest {
-  position: absolute;
-  top: calc(100% + var(--s2));
-  right: 0;
-  z-index: 60;
-  width: min(420px, calc(100vw - 32px));
-  max-height: min(68vh, 480px);
-  overflow: auto;
-  padding: var(--s2);
-  border: 1px solid var(--line);
-  border-radius: var(--r-lg);
-  background: var(--bg-soft);
-}
-
-.suggest[hidden] {
-  display: none;
-}
-
-.suggest-group {
-  padding: var(--s2) var(--s3) var(--s1);
-  font-size: 12px;
-  color: var(--ink-3);
-}
-
-.suggest-item {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0 var(--s3);
-  width: 100%;
-  padding: var(--s2) var(--s3);
-  border: 0;
-  border-radius: var(--r-sm);
-  background: none;
-  text-align: left;
-  cursor: pointer;
-}
-
-.suggest-item:hover,
-.suggest-item.is-active {
-  background: var(--bg-soft);
-}
-
-.s-label {
-  overflow: hidden;
-  font-size: 14px;
-  color: var(--ink);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.s-sub {
-  grid-column: 1 / -1;
-  font-size: 12px;
-  color: var(--ink-3);
-}
-
-.suggest-note {
-  padding: var(--s2) var(--s3);
-  font-size: 14px;
-  color: var(--ink-2);
-}
-
 /* ------------------------------------------------------------- filter bar */
 
 .filter-bar {
@@ -1892,24 +1785,6 @@ main {
     gap: var(--s2);
   }
 
-  .search-box {
-    position: fixed;
-    top: calc(var(--header-h) + var(--s2));
-    left: var(--s3);
-    right: var(--s3);
-    width: auto;
-    z-index: 70;
-  }
-
-  .suggest {
-    position: fixed;
-    top: calc(var(--header-h) + var(--s2) + 48px);
-    left: var(--s3);
-    right: var(--s3);
-    width: auto;
-    max-height: 60vh;
-  }
-
   .filter-bar {
     gap: 0;
     padding: 0 var(--s3);
@@ -2132,7 +2007,6 @@ details[open] > summary .chev {
   .site-footer,
   .toolbar,
   .filter-bar,
-  .suggest,
   .card-watch,
   .more-tags,
   .take-play {
