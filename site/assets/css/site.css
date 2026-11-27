@@ -572,6 +572,15 @@ main {
   padding: 0 var(--s5);
 }
 
+#view,
+.chart,
+.table-wrap,
+.section,
+.two-col > .section {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .page-head {
   display: flex;
   align-items: baseline;
@@ -848,8 +857,10 @@ main {
 /* ---------------------------------------------------------------- heatmap */
 
 .heat-wrap {
+  width: 100%;
   max-width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
   padding-bottom: var(--s2);
 }
@@ -1848,12 +1859,19 @@ main {
     overflow-y: auto;
     overscroll-behavior: contain;
     transform: translateX(-100%);
-    transition: transform 0.18s var(--ease);
+    visibility: hidden;
+    transition: transform 0.18s var(--ease), visibility 0.18s var(--ease);
     z-index: 45;
   }
 
   .nav.is-open {
     transform: none;
+    visibility: visible;
+  }
+
+  /* 古い iOS では overflow: clip が効かないので、本文側でも横スクロールを止める */
+  #view {
+    overflow-x: hidden;
   }
 
   .nav a {

@@ -167,7 +167,7 @@ git push -u origin main
 
 改 `kzhdata/` 里的 xlsx → `git push` → CI 自动重建并发布。GitHub Pages 缓存 `max-age=600`（10 分钟），刚发布看不到变化属正常，Ctrl+F5。
 
-**改了 css / js 时**：把 `site/index.html` 里所有 `?v=4` 与 `app.js` 顶部的 `ASSET_V` 同时 +1，再提交。否则 CDN/浏览器可能继续用旧文件，出现「HTML 是新的、样式还是旧的」这种半更新状态。
+**改了 css / js 时**：把 `site/index.html` 里所有 `?v=N` 与 `app.js` 顶部的 `ASSET_V` 同时 +1，再提交。否则 CDN/浏览器可能继续用旧文件，出现「HTML 是新的、样式还是旧的」这种半更新状态。
 
 ### 自定义域名（可选）
 
