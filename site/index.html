@@ -66,6 +66,38 @@
 
 <div class="tooltip" id="tooltip" role="presentation" aria-hidden="true"></div>
 
+<div id="ovf-debug" hidden></div>
+<script>
+  (function () {
+    if (!/[?&]debug=1/.test(location.search)) return;
+    var box = document.getElementById("ovf-debug");
+    function scan() {
+      var de = document.documentElement;
+      var vw = de.clientWidth;
+      var rows = [];
+      var all = document.body.getElementsByTagName("*");
+      for (var i = 0; i < all.length; i++) {
+        var el = all[i];
+        if (el === box || box.contains(el)) continue;
+        var r = el.getBoundingClientRect();
+        if (!r.width && !r.height) continue;
+        if (r.right > vw + 1) {
+          var cls = (el.getAttribute("class") || "").trim().split(/\s+/).join(".");
+          rows.push({ t: el.tagName.toLowerCase() + (cls ? "." + cls : ""), right: Math.round(r.right), w: Math.round(r.width) });
+        }
+      }
+      rows.sort(function (a, b) { return b.right - a.right; });
+      var head = "vw=" + vw + " scrollW=" + de.scrollWidth + " bodyScrollW=" + document.body.scrollWidth + " vv=" + Math.round((window.visualViewport || {}).width || 0);
+      box.textContent = head + "\n" + rows.slice(0, 14).map(function (r) { return r.t + " → right " + r.right + " / w " + r.w; }).join("\n");
+      box.hidden = false;
+    }
+    box.style.cssText = "position:fixed;left:8px;right:8px;bottom:8px;z-index:9999;max-height:42vh;overflow:auto;background:#fff;color:#000;font:12px/1.5 ui-monospace,monospace;padding:8px;border-radius:10px;white-space:pre-wrap;text-align:left";
+    setTimeout(scan, 1500);
+    window.addEventListener("hashchange", function () { setTimeout(scan, 1200); });
+    window.addEventListener("resize", function () { setTimeout(scan, 400); });
+  })();
+</script>
+
 <script src="assets/js/i18n.js?v=6"></script>
 <script src="assets/js/icons.js?v=6"></script>
 <script src="assets/data/meta.js?v=6"></script>
