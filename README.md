@@ -1,7 +1,7 @@
 # 葛葉 データアーカイブ｜2018–2026
 
 网站正文为日文，本页是中文版；
-日本語版は [README.ja.md](README.ja.md)、维护/部署相关请看 [MAINTAINER.md](MAINTAINER.md)。
+日本語版は [README.ja.md](README.ja.md)。
 
 > 这是粉丝制作的非官方网站。与 葛葉 本人、ANYCOLOR 株式会社、にじさんじ 官方没有任何关系。
 
