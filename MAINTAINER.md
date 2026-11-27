@@ -119,6 +119,7 @@ KZHREPO/
 - **コラボ相手页 CTA**：`data-act="partner"` 在 `route==="collabs" && state.p===v` 时改为 `navigate("streams",{p:...,其余清空})`，否则会把自己这个筛选 toggle 掉。
 - **热力图 tooltip**：用 `chart.dayTip`（`{y}年{m}月{d}日 / {h} 時間（{n} 本）`），与趋势图的 `chart.monthTip` 分开。
 - **筛选菜单第一行**：每个菜单的第一项固定为「すべて／全部」（`groupHtml` 里 `{ v: "", label: t("filter.all") }`），不要再留空标签。
+- **页脚仓库链接**：`index.html` 的 `.footer-meta` 内 `.footer-link`，指向 <https://github.com/onayaaa/KZHREPO>（`target="_blank" rel="noopener"`），文案走 `footer.repo`（ja「GitHub リポジトリ」/ zh「GitHub 仓库」），外链箭头图标由 `setStaticIcons()` 注入 `#footer-ext`。
 - **種類的划分**：`stats.types` 里 live / bangumi / song / clip / short 互斥，五者相加 = streams 总数（当前 3774 + 478 + 126 + 985 + 102 = 5465）；ライブ / 案件 是 live 的内容子类，与 live 重叠。`meta.counts.live` 与 `hours` 为**不含番組・歌**的口径，所以「配信の合計」= 13677 h。`公式番組` 与 `番組` 在 `typeLabelOf` 里都归为 `type.bangumi`；`歌` / `歌ってみた` 都归为 `type.song`。
 - **大会日期**：`tools/build_site.py` 的 `normalize_date_text()` 把 `2019年11月23日~24日` 统一成 `2019.11.23–24`（`~〜～,，` → `–`，月日补零），前端只显示 `dateText`；改源表写法后重跑构建即可。
 - **大会内容筛选**：events 页侧栏「内容」按 `e.content` 计数生成 chip（act `content` / key `c`），`handleAction` 在 `state.route==="events"` 时只 `setState`，不要 navigate 到 streams。

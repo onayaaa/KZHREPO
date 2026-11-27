@@ -41,5 +41,7 @@
 - 2026 年的数据截止 11 月 28 日。
 - 数据来自粉丝整理的「葛葉倉庫 2018–2026」，不是官方数据，漏记与名字变体可能存在。
 - 封面图直接引用 YouTube 缩略图，版权属于各自权利人。
+- 大会・企划与周边的缩略图取自对应页面的 `og:image`，取不到时显示灰色占位块。
+- 页面底部有 GitHub 仓库链接（代码与数据重建脚本）：<https://github.com/onayaaa/KZHREPO>
 
 日本語版は [README.ja.md](README.ja.md)。数据重建与部署请看 [MAINTAINER.md](MAINTAINER.md)。

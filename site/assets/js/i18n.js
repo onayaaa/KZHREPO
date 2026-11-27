@@ -191,6 +191,7 @@ window.KZI18N = (function () {
 
       "footer.note": "非公式アーカイブ ／ データ出典：葛葉倉庫 2018–2026 ／ 各動画・楽曲の権利は権利者に帰属します。",
       "footer.updated": "最終更新",
+      "footer.repo": "GitHub リポジトリ",
       "skeleton.streams": "配信データを読み込んでいます…",
       "skeleton.partners": "コラボ相手の記録を読み込んでいます…",
       "misc.timesSep": " ・ ",
@@ -380,6 +381,7 @@ window.KZI18N = (function () {
 
       "footer.note": "非官方档案 ／ 数据来源：葛葉倉庫 2018–2026 ／ 视频与歌曲权利归各自权利人所有。",
       "footer.updated": "最后更新",
+      "footer.repo": "GitHub 仓库",
       "skeleton.streams": "正在加载直播数据…",
       "skeleton.partners": "正在加载联动对象记录…",
       "misc.timesSep": " ・ ",

@@ -14,7 +14,7 @@
 
   /* 静的資産のキャッシュ版数（index.html の ?v= と揃える。
      前端ファイルを変更したら index.html とここを同時に +1 する） */
-  var ASSET_V = "15";
+  var ASSET_V = "16";
 
   function t(key, vars) {
     return I18N ? I18N.t(key, vars) : key;
@@ -1791,6 +1791,8 @@
   function setStaticIcons() {
     var nt = document.getElementById("nav-toggle");
     if (nt) nt.innerHTML = ICON("menu");
+    var fe = document.getElementById("footer-ext");
+    if (fe) fe.innerHTML = ICON("arrow-up-right");
   }
 
   function boot() {
