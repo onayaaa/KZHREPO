@@ -83,7 +83,7 @@ KZHREPO/
 - 同一月份不要同时出现在两本年册（脚本按册子年份解析、跨文件不去重，会双份）；月份 sheet 必须放在同年册。
 - 更新后看三处：命令行计数、`build-report.txt` 第三节（差异突变）、第五节（无时长/无链接/ID 唯一=否）。
 
-当前结果：**5465 streams（3774 配信 / 478 番組 / 985 切り抜き / 102 Shorts）、13677 h（配信のみ）、376 歌（246 组/126 唱）、214 大会企画、120 合集、221 グッズ、905 コラボ相手**；区间 2018-03-08〜2026-11-28。
+当前结果：**5465 streams（3774 配信 / 478 番組 / 985 切り抜き / 102 Shorts）、13677 h（配信のみ）、376 歌（246 组/126 唱）、215 大会企画、120 合集、221 グッズ（うち 193 件が og:image 取得済み）、905 コラボ相手**；区间 2018-03-08〜2026-11-28。
 
 ## 4. 里程碑修正
 
@@ -111,6 +111,11 @@ KZHREPO/
 - 筛选完全在前端内存里做（5465 条量级足够），改样式只动 `site.css`。
 - **配色**：黑底中性（`--bg #0a0a0a`、`--ink #f2f2f2`、`--line #272727`）+ 单一强调色 `--accent #e5484d`；热力图 6 档 `--heat-0..5` = `#2b2b2b #414141 #5c5c5c #7d7d7d #a5a5a5 #e5484d`（0 = 当天没有配信，明显可见但很暗）。全站无渐变、无阴影；`color-scheme: dark`。
 - **外部链接**：梗概页「公式リンク」只显示账号/频道名（`l.text`），不再叠加网站名；周边页商品名有超链接时渲染成 `.record-title a`（`goods` 数据里的 `u` 字段来自 xlsx B 列超链接）。
+- **缩略图（og:image 直连，グッズ与大会共用）**：`tools/build_site.py` 的 `attach_og_images()` 为商品（`goods[].u`）与大会・企画（`events[].announce` → `playlist`）各抓一次页面，取出 `og:image` / `twitter:image` 的绝对 URL 存进 `m` 字段，缓存于 `tools/og-images.json`（键＝页面 URL，值为 `{src, ts, status}`）。**不下载图片**，前端 `thumbHtml()` 直接 `<img src>` 并带 `referrerpolicy="no-referrer"`；失败时 `onerror` 换成灰色占位块。缓存里 `status=fail` 的记录 7 天后重试；全量重抓：
+  ```powershell
+  & '<python>' tools/build_site.py --refresh-og-images
+  ```
+  构建报告的「八、画像（og:image）」会分别给出商品与大会的取得数与失败主机 Top5。图片版权归各权利者，本站为非官方存档，只做缩略图引用。
 - **コラボ相手页 CTA**：`data-act="partner"` 在 `route==="collabs" && state.p===v` 时改为 `navigate("streams",{p:...,其余清空})`，否则会把自己这个筛选 toggle 掉。
 - **热力图 tooltip**：用 `chart.dayTip`（`{y}年{m}月{d}日 / {h} 時間（{n} 本）`），与趋势图的 `chart.monthTip` 分开。
 - **筛选菜单第一行**：每个菜单的第一项固定为「すべて／全部」（`groupHtml` 里 `{ v: "", label: t("filter.all") }`），不要再留空标签。
@@ -124,7 +129,7 @@ KZHREPO/
 - **歌页活动筛选**：`songs[].n`（備考＝唱这首歌的活动）生成 `act:"event" / key:"n"` 的筛选组，URL 为 `#/songs?n=…`；`state.n` 要同时登记进 `parseHash` 默认值、`sameState`、`currentHash`、`hasFilters`、`handleAction`（`event` 分支）和 `clear`。没有備考的行只在不筛选时出现。
 - **移动端抽屉导航**：`#nav-toggle`（≤767px 才显示，Reicon `menu` 图标）+ `#nav-scrim` + `#site-nav.is-open`；`setNav(open)` 负责 class、`aria-expanded`、`body.is-nav-open`（锁滚动）、焦点进出；`bindNav()` 绑定汉堡、遮罩、导航链接、Esc、`resize`（≥768 自动关闭），`hashchange` 里也会 `setNav(false)`。
 - **封面**：`thumbFor()` 输出 `maxresdefault.jpg`（1280×720），`streamCard` 的 `onerror` 先换成 `hqdefault`、再失败就移除 `<img>` 露出占位层。高分屏清晰度依赖这一步，不要改回 `mqdefault`。
-- **资源版本串**：`index.html` 里 `site.css?v=4`、各 `*.js?v=4`，`app.js` 顶部的 `ASSET_V = "4"` 用于 `streams.js?v=`。**每次改前端资源后把两处同时 +1**（HTML 的 `?v=` 与 `ASSET_V`），否则浏览器可能拿到旧的 css/js，出现「只更新了一半」的假象。
+- **资源版本串**：`index.html` 里 `site.css?v=N`、各 `*.js?v=N`，`app.js` 顶部的 `ASSET_V = "N"` 用于 `streams.js?v=`。**每次改前端资源后把两处同时 +1**（HTML 的 `?v=` 与 `ASSET_V`，当前为 14），否则浏览器可能拿到旧的 css/js，出现「只更新了一半」的假象。
 
 ## 6. 字体与图标
 

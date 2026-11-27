@@ -12,20 +12,27 @@ kzhdata/葛葉仓库 2018-2026 xlsx -> site/assets/data/*.js
 - 所有中文/日文日志写入 site/assets/data/build-report.txt（UTF-8），
   因为 Windows 控制台是 GBK，直接 print 会 UnicodeEncodeError。
 """
+import concurrent.futures
 import datetime
+import html as htmlmod
 import json
 import os
 import re
 import sys
+import time
 import traceback
 import unicodedata
+import urllib.request
 from collections import Counter, OrderedDict, defaultdict
+from urllib.parse import urljoin, urlsplit
 
 import openpyxl
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(ROOT, "kzhdata")
 OUT_DIR = os.path.join(ROOT, "site", "assets", "data")
+GOODS_CACHE = os.path.join(ROOT, "tools", "og-images.json")
+GOODS_CACHE_LEGACY = os.path.join(ROOT, "tools", "goods-images.json")
 REPORT = []
 
 
@@ -493,6 +500,7 @@ def parse_events(ws):
                 "note": norm(ws.cell(r, 7).value),
                 "announce": canonical_url(cell_link(ws.cell(r, 2))),
                 "playlist": canonical_url(cell_link(ws.cell(r, 8))),
+                "m": "",
             }
         )
     return events
@@ -512,9 +520,155 @@ def parse_goods(ws):
                 "k": norm(ws.cell(r, 3).value),
                 "n": norm(ws.cell(r, 4).value),
                 "u": canonical_url(cell_link(cell)),
+                "m": "",
             }
         )
     return out
+
+
+# ------------------------------------------------------------ og:image links
+# 只保存 og:image 链接（不下载二进制），浏览器运行时直连来源站点。
+# 商品（goods[].u）与大会・企画（events[].announce→playlist）共用同一份缓存。
+OG_UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+)
+OG_PATTERNS = [
+    re.compile(r'<meta[^>]+property=["\']og:image(?::url)?["\'][^>]+content=["\']([^"\']+)["\']', re.I),
+    re.compile(r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image(?::url)?["\']', re.I),
+    re.compile(r'<meta[^>]+name=["\']twitter:image(?::src)?["\'][^>]+content=["\']([^"\']+)["\']', re.I),
+    re.compile(r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+name=["\']twitter:image(?::src)?["\']', re.I),
+]
+
+
+def fetch_og_image(url, timeout=10):
+    """抓取页面 HTML 并取出 og:image / twitter:image 的绝对 URL；失败返回空串。"""
+    try:
+        req = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": OG_UA,
+                "Accept": "text/html,application/xhtml+xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "ja,en;q=0.8",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            final_url = resp.geturl()
+            ctype = (resp.headers.get("Content-Type") or "").lower()
+            if "html" not in ctype:
+                return ""
+            raw = resp.read(600000)
+    except Exception:
+        return ""
+    doc = raw.decode("utf-8", "ignore")
+    for rx in OG_PATTERNS:
+        m = rx.search(doc)
+        if not m:
+            continue
+        src = htmlmod.unescape(m.group(1)).strip()
+        if not src:
+            continue
+        src = urljoin(final_url, src)
+        if src.startswith("//"):
+            src = "https:" + src
+        if not re.match(r"^https?://", src, re.I):
+            continue
+        if final_url.lower().startswith("https://") and src.lower().startswith("http://"):
+            src = "https://" + src[7:]
+        return src
+    return ""
+
+
+def _load_og_cache():
+    cache = {}
+    legacy = GOODS_CACHE_LEGACY
+    if os.path.exists(legacy):
+        try:
+            with open(legacy, "r", encoding="utf-8") as fh:
+                old = json.load(fh)
+            if isinstance(old, dict):
+                cache.update(old)
+        except Exception:
+            pass
+    if os.path.exists(GOODS_CACHE):
+        try:
+            with open(GOODS_CACHE, "r", encoding="utf-8") as fh:
+                new = json.load(fh)
+            if isinstance(new, dict):
+                cache.update(new)
+        except Exception:
+            pass
+    return cache
+
+
+def _save_og_cache(cache):
+    try:
+        with open(GOODS_CACHE, "w", encoding="utf-8", newline="\n") as fh:
+            json.dump(dict(sorted(cache.items())), fh, ensure_ascii=False, indent=1)
+            fh.write("\n")
+        return True
+    except Exception:
+        return False
+
+
+def _og_url_of(item, keys):
+    for k in keys:
+        v = item.get(k) or ""
+        if v:
+            return v
+    return ""
+
+
+def attach_og_images(jobs, refresh=False):
+    """jobs: [(record, url, label)]。为每条记录补 m（og:image 的绝对 URL）。
+
+    带缓存，只抓缺失或 7 天前失败的页面；label 用于报告里区分商品/大会。
+    """
+    cache = _load_og_cache()
+    now = int(time.time())
+    todo = []
+    seen = set()
+    for _rec, url, _label in jobs:
+        if not url or url in seen:
+            continue
+        seen.add(url)
+        ent = cache.get(url) or {}
+        if not refresh and ent.get("status") == "ok" and ent.get("src"):
+            continue
+        if not refresh and ent.get("status") == "fail" and now - int(ent.get("ts") or 0) < 7 * 86400:
+            continue
+        todo.append(url)
+
+    if todo:
+        print("og:image: fetching {} page(s)".format(len(todo)))
+
+        def work(u):
+            time.sleep(0.1)
+            src = fetch_og_image(u)
+            if not src:
+                time.sleep(1.0)
+                src = fetch_og_image(u)
+            return u, src
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+            for u, src in pool.map(work, todo):
+                cache[u] = {"src": src, "ts": now, "status": "ok" if src else "fail"}
+        _save_og_cache(cache)
+
+    stats = {}
+    for rec, url, label in jobs:
+        rec["m"] = (cache.get(url) or {}).get("src") or ""
+        st = stats.setdefault(label, {"ok": 0, "with_url": 0, "total": 0, "hosts": Counter()})
+        st["total"] += 1
+        if url:
+            st["with_url"] += 1
+            if rec["m"]:
+                st["ok"] += 1
+            else:
+                st["hosts"][urlsplit(url).netloc] += 1
+    for st in stats.values():
+        st["fetched"] = len(todo)
+    return stats
 
 
 def parse_live_time(ws):
@@ -556,7 +710,9 @@ def parse_renzoku(ws):
 # --------------------------------------------------------------------- build
 
 
-def main():
+def main(argv=None):
+    argv = list(sys.argv[1:] if argv is None else argv)
+    refresh_og_images = "--refresh-og-images" in argv or "--refresh-goods-images" in argv
     if not os.path.isdir(OUT_DIR):
         os.makedirs(OUT_DIR)
 
@@ -635,6 +791,11 @@ def main():
     songs.sort(key=lambda x: x["d"])
     events.sort(key=lambda x: x["date"] or x["dateText"])
     goods.sort(key=lambda x: x["d"], reverse=True)
+    og_jobs = [(g, g.get("u") or "", "goods") for g in goods]
+    og_jobs += [(e, e.get("announce") or e.get("playlist") or "", "events") for e in events]
+    og_stats = attach_og_images(og_jobs, refresh=refresh_og_images)
+    goods_img = og_stats.get("goods") or {"ok": 0, "with_url": 0, "total": 0, "fetched": 0, "hosts": Counter()}
+    events_img = og_stats.get("events") or {"ok": 0, "with_url": 0, "total": 0, "fetched": 0, "hosts": Counter()}
     subscribers.sort(key=lambda x: (x["d"], x["n"]))
 
     # ------------------------------------------------------------- aggregates
@@ -894,7 +1055,17 @@ def main():
     if oncers:
         log("    " + "、".join(oncers[:40]))
     log("")
-    log("== 八、输出文件 ==")
+    log("== 八、画像（og:image） ==")
+    log("  グッズ: 取得 {ok} / リンク {with_url} 件（全 {total} 件）".format(**goods_img))
+    log("  大会・企画: 取得 {ok} / リンク {with_url} 件（全 {total} 件）".format(**events_img))
+    log("  今回の新規取得: {} ページ".format(goods_img.get("fetched", 0)))
+    log("  取得不可の主なホスト(グッズ): " + (
+        ", ".join("{}={}".format(k, v) for k, v in goods_img["hosts"].most_common(5)) or "なし"))
+    log("  取得不可の主なホスト(大会): " + (
+        ", ".join("{}={}".format(k, v) for k, v in events_img["hosts"].most_common(5)) or "なし"))
+    log("  画像は各リンク先の og:image を保存し、ブラウザで直リンク表示（ダウンロードなし）。")
+    log("")
+    log("== 九、输出文件 ==")
     for name in ("meta.js", "stats.js", "partners.js", "songs.js", "events.js", "goods.js", "streams.js"):
         p = os.path.join(OUT_DIR, name)
         log("  {:<12} {:>8} KB".format(name, round(os.path.getsize(p) / 1024.0, 1)))

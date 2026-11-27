@@ -1,5 +1,6 @@
 .dsh/
 .tmp/
+.backup/
 .pnpm-store/
 __pycache__/
 *.pyc

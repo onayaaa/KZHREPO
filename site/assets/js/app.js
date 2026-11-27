@@ -14,7 +14,7 @@
 
   /* 静的資産のキャッシュ版数（index.html の ?v= と揃える。
      前端ファイルを変更したら index.html とここを同時に +1 する） */
-  var ASSET_V = "11";
+  var ASSET_V = "15";
 
   function t(key, vars) {
     return I18N ? I18N.t(key, vars) : key;
@@ -345,6 +345,17 @@
     }
 
     if (state.route === "songs") {
+      var songYearCount = {};
+      songs.forEach(function (s) {
+        var y = String(s.d || "").slice(0, 4);
+        if (/^\d{4}$/.test(y)) songYearCount[y] = (songYearCount[y] || 0) + 1;
+      });
+      var songYears = Object.keys(songYearCount)
+        .sort()
+        .reverse()
+        .map(function (k) { return { v: k, n: songYearCount[k] }; });
+      groups.push({ act: "year", key: "y", label: t("filter.year"), items: songYears });
+
       var kindCount = {};
       songs.forEach(function (s) {
         kindCount[s.k] = (kindCount[s.k] || 0) + 1;
@@ -395,6 +406,17 @@
 
     if (state.route === "events") {
       if (state.tab !== "goods") {
+        var eventYearCount = {};
+        events.forEach(function (e) {
+          var y = String(e.date || e.dateText || "").slice(0, 4);
+          if (/^\d{4}$/.test(y)) eventYearCount[y] = (eventYearCount[y] || 0) + 1;
+        });
+        var eventYears = Object.keys(eventYearCount)
+          .sort()
+          .reverse()
+          .map(function (k) { return { v: k, n: eventYearCount[k] }; });
+        groups.push({ act: "year", key: "y", label: t("filter.year"), items: eventYears });
+
         var rc = {};
         events.forEach(function (e) {
           var rk = resultRank(e.result);
@@ -425,6 +447,17 @@
         if (state.p && !members.some(function (x) { return x.v === state.p; })) members.unshift({ v: state.p, n: 0 });
         groups.push({ act: "partner", key: "p", label: t("filter.member"), items: members });
       } else {
+        var goodsYearCount = {};
+        goods.forEach(function (g) {
+          var y = String(g.d || "").slice(0, 4);
+          if (/^\d{4}$/.test(y)) goodsYearCount[y] = (goodsYearCount[y] || 0) + 1;
+        });
+        var goodsYears = Object.keys(goodsYearCount)
+          .sort()
+          .reverse()
+          .map(function (k) { return { v: k, n: goodsYearCount[k] }; });
+        groups.push({ act: "year", key: "y", label: t("filter.year"), items: goodsYears });
+
         var gk = {};
         goods.forEach(function (g) {
           gk[g.k] = (gk[g.k] || 0) + 1;
@@ -1098,6 +1131,12 @@
     );
   }
 
+  function thumbHtml(src) {
+    return src
+      ? '<span class="record-thumb"><img src="' + esc(src) + '" width="64" height="64" loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="" onerror="this.parentNode.classList.add(\'is-empty\');this.remove();"></span>'
+      : '<span class="record-thumb is-empty" aria-hidden="true"></span>';
+  }
+
   function eventRow(e) {
     var rk = resultRank(e.result);
     var resultHtml = "";
@@ -1107,8 +1146,9 @@
         esc(String(e.result).trim()) + "</span>";
     }
     return (
-      '<li class="record' + (rk === "champion" ? " is-champion" : "") + '">' +
+      '<li class="record has-thumb' + (rk === "champion" ? " is-champion" : "") + '">' +
       '<span class="record-date">' + esc(e.dateText || fdate(e.date)) + "</span>" +
+      thumbHtml(e.m) +
       '<div class="record-main">' +
       '<h3 class="record-title" lang="ja">' +
       (e.announce ? '<a href="' + esc(e.announce) + '" target="_blank" rel="noopener noreferrer">' + esc(e.name) + "</a>" : esc(e.name)) +
@@ -1129,8 +1169,9 @@
 
   function goodsRow(g) {
     return (
-      '<li class="record">' +
+      '<li class="record has-thumb">' +
       '<span class="record-date">' + esc(fdate(g.d)) + "</span>" +
+      thumbHtml(g.m) +
       '<div class="record-main"><h3 class="record-title" lang="ja">' +
       (g.u
         ? '<a href="' + esc(g.u) + '" target="_blank" rel="noopener noreferrer">' + esc(g.t) + "</a>"

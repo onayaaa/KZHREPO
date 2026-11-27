@@ -17,7 +17,7 @@
   总条目: 5465
   配信: 3774 / 公式切り抜き: 985 / Shorts: 102
   配信总时长: 13677 小时
-  歌: 376 / 大会企划: 214 / 直播合集: 120 / グッズ&イベント: 221
+  歌: 376 / 大会企划: 215 / 直播合集: 120 / グッズ&イベント: 221
   共演者(去重): 905
 
 == 三、年度校验（与「直播时间」表对比）==
@@ -72,14 +72,22 @@
 
 == 七、异常与提示 ==
   无
-  仅出现 1 次的共演者(可能是名字变体): 300 人
+  仅出现 1 次的共演者(可能是名字变体): 298 人
     夜空メル、Euriece、本田翼、wokka、(三枝明那)、DJ、Foy、Jr.、えでん、えなこ、ぎるる、一条莉々華、布団ちゃん、Axel Syrios、白上フブキ、チョコ、扇名いだ、青桐エイト、UMA(しかさん)、みこなす、GON、Nephrite、zepher、白河しろせ、ドズル社、るぅと、シヴァ、ハンティング馬、変な獣、ooharaMEN、望月ほぐの、波兎ちゃい、瀬尾カザリ、御庭そと、フランシスコ、syomaru7、えねぽよ、しらす、インクルード、スタンミジャパン
 
-== 八、输出文件 ==
+== 八、画像（og:image） ==
+  グッズ: 取得 193 / リンク 220 件（全 221 件）
+  大会・企画: 取得 126 / リンク 162 件（全 215 件）
+  今回の新規取得: 160 ページ
+  取得不可の主なホスト(グッズ): collabo.karaokemanekineko.jp=3, shop.nijisanji.jp=3, pubgmobile.jp=2, www.round1.co.jp=1, www.at-raku.com=1
+  取得不可の主なホスト(大会): www.youtube.com=17, crcup.jp=14, vtuber-esports.jp=2, beast-cup.com=1, playpoints.withgoogle.com=1
+  画像は各リンク先の og:image を保存し、ブラウザで直リンク表示（ダウンロードなし）。
+
+== 九、输出文件 ==
   meta.js          28.1 KB
   stats.js         60.5 KB
   partners.js     111.5 KB
   songs.js         68.8 KB
-  events.js        68.6 KB
-  goods.js         35.6 KB
+  events.js        79.1 KB
+  goods.js         60.0 KB
   streams.js     1844.9 KB
