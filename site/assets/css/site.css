@@ -1050,6 +1050,24 @@ main {
   background: var(--accent);
 }
 
+/* 主催は優勝とは別の形で強く出す。強調色ではなく反転したベタ塗りラベル。 */
+.record-result.is-host {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 var(--s2);
+  border-radius: var(--r-sm);
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.record.is-host .record-title {
+  font-weight: 600;
+}
+
 .record-sub {
   grid-column: 2;
   display: flex;

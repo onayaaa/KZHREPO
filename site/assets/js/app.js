@@ -14,7 +14,7 @@
 
   /* 静的資産のキャッシュ版数（index.html の ?v= と揃える。
      前端ファイルを変更したら index.html とここを同時に +1 する） */
-  var ASSET_V = "16";
+  var ASSET_V = "19";
 
   function t(key, vars) {
     return I18N ? I18N.t(key, vars) : key;
@@ -49,14 +49,17 @@
 
   var routes = ["summary", "streams", "songs", "events", "collabs"];
 
-  var RESULT_ORDER = ["champion", "runnerup", "third", "top10", "out", "other", "unknown"];
+  var RESULT_ORDER = ["champion", "runnerup", "third", "top10", "out", "host", "other", "unknown"];
 
   /* 大会の成績を分類する。「準優勝」は「優勝」を含むので先に判定する。 */
   function resultRank(result) {
     var r = String(result == null ? "" : result).trim();
     if (!r || r === "-" || r === "？" || r === "?") return "unknown";
+    /* 主催は順位ではなく役割なので、順位判定より先に見る（「主催、8位」など）。 */
+    if (/主催/.test(r)) return "host";
     if (/準優勝/.test(r)) return "runnerup";
-    if (/優勝|チャンピオン/.test(r) || /^1\s*位/.test(r)) return "champion";
+    /* MVP・勝利 も優勝として扱う。 */
+    if (/優勝|チャンピオン|MVP|勝利/.test(r) || /^1\s*位/.test(r)) return "champion";
     if (/^2\s*位/.test(r)) return "runnerup";
     if (/^3\s*位/.test(r)) return "third";
     if (/^[4-9]\s*位/.test(r) || /^10\s*位/.test(r)) return "top10";
@@ -1142,11 +1145,11 @@
     var resultHtml = "";
     if (e.result) {
       resultHtml =
-        '<span class="record-result' + (rk === "champion" ? " is-champion" : "") + '" lang="ja">' +
+        '<span class="record-result' + (rk === "champion" ? " is-champion" : rk === "host" ? " is-host" : "") + '" lang="ja">' +
         esc(String(e.result).trim()) + "</span>";
     }
     return (
-      '<li class="record has-thumb' + (rk === "champion" ? " is-champion" : "") + '">' +
+      '<li class="record has-thumb' + (rk === "champion" ? " is-champion" : rk === "host" ? " is-host" : "") + '">' +
       '<span class="record-date">' + esc(e.dateText || fdate(e.date)) + "</span>" +
       thumbHtml(e.m) +
       '<div class="record-main">' +
@@ -1386,7 +1389,7 @@
       '<div class="toolbar">' + searchField(searchPlaceholder()) +
       '<span class="count-line" aria-live="polite">' +
       esc(t(isGoods ? "count.goods" : "count.events", { total: num(list.length), shown: num(shown.length) })) +
-      (isGoods
+      (isGoods || !champions
         ? ""
         : '<span class="sep">·</span><span class="count-accent">' +
           esc(t("count.champions", { n: num(champions) })) + "</span>") +

@@ -113,6 +113,7 @@ window.KZI18N = (function () {
       "result.third": "3位",
       "result.top10": "4〜10位",
       "result.out": "敗退・予選落ち",
+      "result.host": "主催",
       "result.other": "その他",
       "result.unknown": "記録なし",
 
@@ -303,6 +304,7 @@ window.KZI18N = (function () {
       "result.third": "第 3 名",
       "result.top10": "4～10 名",
       "result.out": "淘汰·预选落败",
+      "result.host": "主办",
       "result.other": "其他",
       "result.unknown": "无记录",
 

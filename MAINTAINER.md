@@ -123,6 +123,7 @@ KZHREPO/
 - **種類的划分**：`stats.types` 里 live / bangumi / song / clip / short 互斥，五者相加 = streams 总数（当前 3774 + 478 + 126 + 985 + 102 = 5465）；ライブ / 案件 是 live 的内容子类，与 live 重叠。`meta.counts.live` 与 `hours` 为**不含番組・歌**的口径，所以「配信の合計」= 13677 h。`公式番組` 与 `番組` 在 `typeLabelOf` 里都归为 `type.bangumi`；`歌` / `歌ってみた` 都归为 `type.song`。
 - **大会日期**：`tools/build_site.py` 的 `normalize_date_text()` 把 `2019年11月23日~24日` 统一成 `2019.11.23–24`（`~〜～,，` → `–`，月日补零），前端只显示 `dateText`；改源表写法后重跑构建即可。
 - **大会内容筛选**：events 页侧栏「内容」按 `e.content` 计数生成 chip（act `content` / key `c`），`handleAction` 在 `state.route==="events"` 时只 `setState`，不要 navigate 到 streams。
+- **成绩分类**：`resultRank()` 先判 `主催`（「主催、8位」这类混合写法也归主催），再判準優勝，然后把 `優勝 / チャンピオン / MVP / 勝利 / 1位` 都归为 `champion`；`RESULT_ORDER` 含 `host`（chip 文案 `result.host`，ja 主催 / zh 主办）。冠军计数为 0 时不显示「優勝 N 件」那一截。视觉上冠军是强调色文字 + 左侧竖条，主催则是 `.record-result.is-host` 的细边框标签 + 标题加粗，两者刻意区分。
 - **概要页表格**：只保留「配信カレンダー」下的月度表（`heatTable`）；「月別の配信時間」下的重复月表已移除。数值列 `<th class="num">` 与 `td.num` 同为右对齐 + `tabular-nums`，否则表头与数字错位。
 - **不写「ソロ」**：组合/成员为空时留空（`take-unit`、`take-members`），卡片不再补「ソロ」标签；视频标题里原文出现的「ソロ」不动。
 - **卡片上的「ほか N 人」**：`.more-tags` 常显（不要加 hover 才出现的 opacity），点开显示全部共演者。
