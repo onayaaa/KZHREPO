@@ -219,7 +219,9 @@ window.KZCharts = (function () {
 
     var cells = "";
     var cols = "";
+    var colList = [];
     var maxH = 0;
+    var lastUsedWk = -1;
 
     for (var wkol = 0; wkol < weeks; wkol++) {
       var col = "";
@@ -235,6 +237,7 @@ window.KZCharts = (function () {
         var rec = calendar[iso];
         var h = rec ? rec[0] : 0;
         var n = rec ? rec[1] : 0;
+        if (rec) lastUsedWk = wkol;
         if (h > maxH) maxH = h;
         var label = T("chart.dayTip", {
           y: year,
@@ -249,14 +252,20 @@ window.KZCharts = (function () {
           (rec ? ' data-tip="' + esc(label) + '" data-date="' + iso + '"' : "") +
           '><span class="sr-only">' + esc(dayLabel) + "</span></span>";
       }
-      cols += '<div class="heat-col">' + col + "</div>";
+      colList.push('<div class="heat-col">' + col + "</div>");
     }
+
+    // 記録が終わる週より後ろは空列になるので落とす（月末で止まっている年の右側が
+    // 空白のまま横スクロールできてしまうのを防ぐ）。
+    if (lastUsedWk >= 0) weeks = Math.min(weeks, lastUsedWk + 1);
+    cols = colList.slice(0, weeks).join("");
 
     var monthLabels = "";
     for (var mi = 0; mi < 12; mi++) {
       var firstOfMonth = new Date(Date.UTC(year, mi, 1));
       var dayIdx = Math.round((firstOfMonth - start) / dayMs) + startDow;
       var wk = Math.floor(dayIdx / 7);
+      if (wk + 1 > weeks) continue;
       monthLabels += '<span style="grid-column:' + (wk + 1) + '">' + (mi + 1) + "</span>";
     }
 

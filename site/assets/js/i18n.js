@@ -17,6 +17,8 @@ window.KZI18N = (function () {
       "nav.events": "大会・企画",
       "nav.collabs": "コラボ相手",
       "nav.label": "主要ナビゲーション",
+      "nav.open": "メニュー",
+      "nav.close": "メニューを閉じる",
 
       "page.summary": "概要",
       "page.streams": "配信アーカイブ",
@@ -51,6 +53,7 @@ window.KZI18N = (function () {
       "filter.kind": "種類",
       "filter.category": "分類",
       "filter.unit": "ユニット",
+      "filter.event": "イベント",
       "filter.clear": "クリア",
       "filter.all": "すべて",
       "filter.yearValue": "{y} 年",
@@ -202,6 +205,8 @@ window.KZI18N = (function () {
       "nav.events": "大会·企划",
       "nav.collabs": "联动对象",
       "nav.label": "主导航",
+      "nav.open": "菜单",
+      "nav.close": "关闭菜单",
 
       "page.summary": "概要",
       "page.streams": "直播档案",
@@ -236,6 +241,7 @@ window.KZI18N = (function () {
       "filter.kind": "类型",
       "filter.category": "分类",
       "filter.unit": "组合",
+      "filter.event": "活动",
       "filter.clear": "清除",
       "filter.all": "全部",
       "filter.yearValue": "{y} 年",

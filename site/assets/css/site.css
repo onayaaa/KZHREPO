@@ -88,10 +88,13 @@ html [lang="ja"] {
 html {
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
+  overflow-x: clip;
 }
 
 body {
   margin: 0;
+  max-width: 100%;
+  overflow-x: clip;
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font);
@@ -181,12 +184,14 @@ button {
 }
 
 .wordmark {
+  flex: none;
   font-size: 18px;
   font-weight: 600;
   letter-spacing: 0.02em;
   color: var(--ink);
   text-decoration: none;
   margin-right: var(--s1);
+  white-space: nowrap;
 }
 
 .nav {
@@ -271,6 +276,30 @@ button {
 
 .icon-btn:hover {
   background: var(--bg-soft);
+}
+
+/* モバイル用ハンバーガー。デスクトップでは出さない。 */
+.nav-toggle {
+  display: none;
+}
+
+.nav-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s var(--ease);
+}
+
+.nav-scrim.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+body.is-nav-open {
+  overflow: hidden;
 }
 
 /* ---------------------------------------------------------------- search */
@@ -427,8 +456,13 @@ button {
 }
 
 .filter-val {
+  display: inline-block;
+  max-width: 200px;
+  overflow: hidden;
   font-weight: 600;
   color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .filter-btn .chev {
@@ -814,7 +848,9 @@ main {
 /* ---------------------------------------------------------------- heatmap */
 
 .heat-wrap {
+  max-width: 100%;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   padding-bottom: var(--s2);
 }
 
@@ -1791,18 +1827,44 @@ main {
     font-size: 16px;
   }
 
-  .nav {
-    gap: var(--s4);
-    overflow-x: auto;
-    scrollbar-width: none;
+  .nav-toggle {
+    display: inline-flex;
   }
 
-  .nav::-webkit-scrollbar {
-    display: none;
+  .nav {
+    position: fixed;
+    top: var(--header-h);
+    left: 0;
+    bottom: 0;
+    width: min(80vw, 320px);
+    margin: 0;
+    padding: var(--s4);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    background: var(--bg);
+    border-right: 1px solid var(--line);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    transform: translateX(-100%);
+    transition: transform 0.18s var(--ease);
+    z-index: 45;
+  }
+
+  .nav.is-open {
+    transform: none;
   }
 
   .nav a {
-    font-size: 14px;
+    padding: var(--s3) var(--s2);
+    border-bottom: 0;
+    font-size: 16px;
+  }
+
+  .nav a[aria-current="page"] {
+    border-bottom-color: transparent;
+    font-weight: 600;
   }
 
   .header-tools {

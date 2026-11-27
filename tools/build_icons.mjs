@@ -12,7 +12,7 @@ import path from 'node:path';
 
 const NAMES = [
   'Search', 'X', 'ChevronDown', 'ArrowUpRight', 'Play', 'Calendar',
-  'Clock', 'Users', 'Trophy', 'Music', 'Gamepad', 'Filter', 'Minus',
+  'Clock', 'Users', 'Trophy', 'Music', 'Gamepad', 'Filter', 'Minus', 'Menu',
 ];
 
 const BASE = 'https://cdn.jsdelivr.net/npm/reicon@1.2.5/icons/';

@@ -121,6 +121,10 @@ KZHREPO/
 - **不写「ソロ」**：组合/成员为空时留空（`take-unit`、`take-members`），卡片不再补「ソロ」标签；视频标题里原文出现的「ソロ」不动。
 - **卡片上的「ほか N 人」**：`.more-tags` 常显（不要加 hover 才出现的 opacity），点开显示全部共演者。
 - **书体切换**：`html:lang(zh)` 把 `--font` 换成 `--font-zh`（Noto Sans SC → Microsoft YaHei → PingFang SC …），避免中文用日文字形；数据文本（配信标题、人名、曲名、成绩、游戏名、備考）都带 `lang="ja"`，由 `html [lang="ja"] { font-family: var(--font-ja) }` 保持日文书体。新增数据字段的模板记得补 `lang="ja"`。
+- **歌页活动筛选**：`songs[].n`（備考＝唱这首歌的活动）生成 `act:"event" / key:"n"` 的筛选组，URL 为 `#/songs?n=…`；`state.n` 要同时登记进 `parseHash` 默认值、`sameState`、`currentHash`、`hasFilters`、`handleAction`（`event` 分支）和 `clear`。没有備考的行只在不筛选时出现。
+- **移动端抽屉导航**：`#nav-toggle`（≤767px 才显示，Reicon `menu` 图标）+ `#nav-scrim` + `#site-nav.is-open`；`setNav(open)` 负责 class、`aria-expanded`、`body.is-nav-open`（锁滚动）、焦点进出；`bindNav()` 绑定汉堡、遮罩、导航链接、Esc、`resize`（≥768 自动关闭），`hashchange` 里也会 `setNav(false)`。
+- **封面**：`thumbFor()` 输出 `maxresdefault.jpg`（1280×720），`streamCard` 的 `onerror` 先换成 `hqdefault`、再失败就移除 `<img>` 露出占位层。高分屏清晰度依赖这一步，不要改回 `mqdefault`。
+- **资源版本串**：`index.html` 里 `site.css?v=4`、各 `*.js?v=4`，`app.js` 顶部的 `ASSET_V = "4"` 用于 `streams.js?v=`。**每次改前端资源后把两处同时 +1**（HTML 的 `?v=` 与 `ASSET_V`），否则浏览器可能拿到旧的 css/js，出现「只更新了一半」的假象。
 
 ## 6. 字体与图标
 
@@ -163,6 +167,8 @@ git push -u origin main
 
 改 `kzhdata/` 里的 xlsx → `git push` → CI 自动重建并发布。GitHub Pages 缓存 `max-age=600`（10 分钟），刚发布看不到变化属正常，Ctrl+F5。
 
+**改了 css / js 时**：把 `site/index.html` 里所有 `?v=4` 与 `app.js` 顶部的 `ASSET_V` 同时 +1，再提交。否则 CDN/浏览器可能继续用旧文件，出现「HTML 是新的、样式还是旧的」这种半更新状态。
+
 ### 自定义域名（可选）
 
 1. 域名商加 CNAME 指向 `<账号>.github.io`。
@@ -179,7 +185,8 @@ git push -u origin main
 
 - 非官方数据；名字变体未合并（报告第七节列出只出现 1 次的 300 人）。
 - 「联动」表与站内自算时长口径不同，站内数字偏大。
-- 封面取自 YouTube `mqdefault`（320×180）；取不到时先试 `hqdefault`，仍失败则保留占位块。非 YouTube 平台的配信只有占位。
+- 封面取自 YouTube `maxresdefault`（1280×720）；取不到时依次降级 `hqdefault`、占位块。非 YouTube 平台的配信只有占位。
+- 手机端导航是抽屉（`#nav-toggle`）；`html`/`body` 设了 `overflow-x: clip`，新增横向滚动容器时请放在 `.heat-wrap` / `.table-wrap` 这类局部容器里，不要让它撑破页面。
 - 2026 年数据截止 2026-11-28。
 
 ## 9. 改完后的自检
@@ -197,5 +204,5 @@ git push -u origin main
 
 - `site.css` 花括号数量平衡、页面无 `undefined`/`NaN` 出现，基本就没问题。
 - 改了文案：确认 `i18n.js` 里 ja / zh 两份字典键一致（`.tmp\i18n_check.js` 会扫 `t("…")` 与 `data-i18n` 是否缺键）。
-- 真实渲染回归：`.tmp\domtest` 下有 jsdom 脚本（`jsdom_test.js` / `menu_test.js` / `i18n_routes_test.js` / `fix_test.js`），需先 `python -m http.server 8899 --directory site`，再用捆绑 node 在该目录内执行。
+- 真实渲染回归：`.tmp\domtest` 下有 jsdom 脚本（`jsdom_test.js` / `menu_test.js` / `i18n_routes_test.js` / `fix_test.js` / `fix2_test.js`），需先 `python -m http.server 8899 --directory site`，再用捆绑 node 在该目录内执行。
 - 注意：不要用 PowerShell `Get-Content/Set-Content` 改含中文或日文的 UTF-8 文件（会按 GBK 重编码），只用编辑器/工具写。

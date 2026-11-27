@@ -12,6 +12,10 @@
   var ICON = window.KZIcon || function () { return ""; };
   var esc = Charts.esc;
 
+  /* 静的資産のキャッシュ版数（index.html の ?v= と揃える。
+     前端ファイルを変更したら index.html とここを同時に +1 する） */
+  var ASSET_V = "4";
+
   function t(key, vars) {
     return I18N ? I18N.t(key, vars) : key;
   }
@@ -37,6 +41,7 @@
     limit: 60,
     heatYear: "",
     r: "",
+    n: "",
   };
 
   /* カード上で「ほか N 人」を押した配信（配信ID → 1） */
@@ -94,7 +99,7 @@
   }
 
   function thumbFor(s) {
-    if (s.p === "youtube" && s.v) return "https://i.ytimg.com/vi/" + s.v + "/mqdefault.jpg";
+    if (s.p === "youtube" && s.v) return "https://i.ytimg.com/vi/" + s.v + "/maxresdefault.jpg";
     return "";
   }
 
@@ -124,7 +129,7 @@
 
   function hasFilters() {
     if (state.p && !(state.route === "events" && state.tab === "goods")) return true;
-    return !!(state.y || state.m || state.c || state.t || state.r || state.u || state.q);
+    return !!(state.y || state.m || state.c || state.t || state.r || state.u || state.n || state.q);
   }
 
   /* -------------------------------------------------------------- url/state */
@@ -135,7 +140,7 @@
     var query = qi < 0 ? "" : raw.slice(qi + 1);
     var out = {
       route: routes.indexOf(path) >= 0 ? path : "summary",
-      p: "", y: "", m: "", c: "", t: "", u: "", q: "", r: "",
+      p: "", y: "", m: "", c: "", t: "", u: "", q: "", r: "", n: "",
       sort: path === "collabs" ? "h" : "new",
       tab: "events",
       limit: 60,
@@ -158,6 +163,7 @@
     return (
       a.route === b.route && a.p === b.p && a.y === b.y && a.m === b.m &&
       a.c === b.c && a.t === b.t && a.q === b.q && a.tab === b.tab && a.r === b.r &&
+      a.u === b.u && a.n === b.n &&
       a.heatYear === b.heatYear
     );
   }
@@ -171,6 +177,7 @@
     if (state.t) parts.push("t=" + encodeURIComponent(state.t));
     if (state.q) parts.push("q=" + encodeURIComponent(state.q));
     if (state.route === "songs" && state.u) parts.push("u=" + encodeURIComponent(state.u));
+    if (state.route === "songs" && state.n) parts.push("n=" + encodeURIComponent(state.n));
     if (state.route === "events" && state.tab !== "events") parts.push("tab=" + state.tab);
     if (state.route === "events" && state.r) parts.push("r=" + encodeURIComponent(state.r));
     if (state.route === "collabs" && state.sort !== "h") parts.push("sort=" + state.sort);
@@ -222,7 +229,7 @@
     if (streams) return Promise.resolve();
     return new Promise(function (resolve, reject) {
       var s = document.createElement("script");
-      s.src = "assets/data/streams.js";
+      s.src = "assets/data/streams.js?v=" + ASSET_V;
       s.onload = function () {
         streams = KZ.streams || [];
         resolve();
@@ -243,6 +250,37 @@
       });
     }
     document.title = t("doc.title", { page: t("page." + state.route) });
+  }
+
+  /* ------------------------------------------------------ mobile nav drawer */
+  var navState = { open: false, lastFocus: null };
+
+  function setNav(open) {
+    var nav = document.getElementById("site-nav");
+    var toggle = document.getElementById("nav-toggle");
+    var scrim = document.getElementById("nav-scrim");
+    if (!nav || !toggle) return;
+    var next = !!open;
+    if (next === navState.open) return;
+    navState.open = next;
+    if (next) navState.lastFocus = document.activeElement;
+    if (nav.classList) nav.classList.toggle("is-open", next);
+    if (scrim && scrim.classList) scrim.classList.toggle("is-open", next);
+    if (document.body && document.body.classList) {
+      document.body.classList.toggle("is-nav-open", next);
+    }
+    toggle.setAttribute("aria-expanded", String(next));
+    // data-i18n-aria も切り替えておくと、言語切替後の applyStatic でも文言が揃う。
+    toggle.setAttribute("data-i18n-aria", next ? "nav.close" : "nav.open");
+    toggle.setAttribute("aria-label", t(next ? "nav.close" : "nav.open"));
+    if (next) {
+      var first = nav.querySelector ? nav.querySelector("a") : null;
+      if (first && first.focus) first.focus();
+    } else {
+      var back = navState.lastFocus;
+      navState.lastFocus = null;
+      if (back && back.focus && back !== document.body) back.focus();
+    }
   }
 
   /* ------------------------------------------------ header global search */
@@ -498,6 +536,21 @@
         .map(function (u) { return { v: u, n: unitCount[u] }; });
       if (state.u && !units.some(function (x) { return x.v === state.u; })) units.unshift({ v: state.u, n: 0 });
       groups.push({ act: "unit", key: "u", label: t("filter.unit"), items: units });
+
+      // 備考（＝歌ったイベント）で絞り込む。空欄の行は「イベントなし」なので一覧に出さない。
+      var noteCount = {};
+      songs.forEach(function (s) {
+        var note = s.n || "";
+        if (!note) return;
+        noteCount[note] = (noteCount[note] || 0) + 1;
+      });
+      var notes = Object.keys(noteCount)
+        .sort(function (a, b) { return noteCount[b] - noteCount[a] || (a < b ? -1 : 1); })
+        .map(function (k) { return { v: k, n: noteCount[k] }; });
+      if (state.n && !notes.some(function (x) { return x.v === state.n; })) {
+        notes.unshift({ v: state.n, n: 0 });
+      }
+      groups.push({ act: "event", key: "n", label: t("filter.event"), items: notes });
 
       var top = partners
         .filter(function (p) { return p.so > 0; })
@@ -941,7 +994,8 @@
         if (state.y && s.d.slice(0, 4) !== state.y) return false;
         if (state.c && s.k !== state.c) return false;
         if (state.u && s.e !== state.u) return false;
-        if (q && (s.t + " " + s.e + " " + s.r.join(" ")).toLowerCase().indexOf(q) < 0) return false;
+        if (state.n && (s.n || "") !== state.n) return false;
+        if (q && (s.t + " " + s.e + " " + (s.n || "") + " " + s.r.join(" ")).toLowerCase().indexOf(q) < 0) return false;
         return true;
       })
       .sort(function (a, b) { return a.d > b.d ? -1 : a.d < b.d ? 1 : 0; });
@@ -1146,9 +1200,9 @@
       media =
         '<a class="card-media" href="' + esc(url || "#") + '" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">' +
         '<span class="card-placeholder">' + ICON("play") + "<span>" + esc(typeLabel) + "</span></span>" +
-        '<img src="' + thumb + '" width="320" height="180" loading="lazy" decoding="async" referrerpolicy="no-referrer" alt=""' +
+        '<img src="' + thumb + '" width="640" height="360" loading="lazy" decoding="async" referrerpolicy="no-referrer" alt=""' +
         ' onload="this.classList.add(\'is-loaded\')"' +
-        ' onerror="this.onerror=null;this.src=this.src.replace(\'/mqdefault.jpg\',\'/hqdefault.jpg\');this.onerror=function(){this.remove();};"' +
+        ' onerror="this.onerror=null;this.src=this.src.replace(\'/maxresdefault.jpg\',\'/hqdefault.jpg\');this.onerror=function(){this.remove();};"' +
         "></a>";
     } else {
       media =
@@ -1707,6 +1761,8 @@
       setState({ c: v === state.c ? "" : v });
     } else if (act === "unit") {
       setState({ u: v === state.u ? "" : v });
+    } else if (act === "event") {
+      setState({ n: v === state.n ? "" : v, limit: 60 });
     } else if (act === "tags") {
       if (expandedTags[v]) delete expandedTags[v];
       else expandedTags[v] = 1;
@@ -1725,7 +1781,7 @@
       syncUrl();
       renderContent();
     } else if (act === "clear") {
-      Object.assign(state, { p: "", y: "", m: "", c: "", t: "", q: "", u: "", r: "", limit: 60 });
+      Object.assign(state, { p: "", y: "", m: "", c: "", t: "", q: "", u: "", r: "", n: "", limit: 60 });
       var input = siteSearchInput();
       if (input) input.value = "";
       closeSuggest();
@@ -1736,6 +1792,34 @@
       renderContent();
     }
     if (act !== "suggest" && act !== "more" && act !== "tags" && act !== "heatyear") closeMenu();
+  }
+
+  function bindNav() {
+    var toggle = document.getElementById("nav-toggle");
+    if (toggle) {
+      toggle.addEventListener("click", function () {
+        setNav(!navState.open);
+      });
+    }
+    var scrim = document.getElementById("nav-scrim");
+    if (scrim) {
+      scrim.addEventListener("click", function () {
+        setNav(false);
+      });
+    }
+    var nav = document.getElementById("site-nav");
+    if (nav) {
+      nav.addEventListener("click", function (ev) {
+        var a = ev.target && ev.target.closest ? ev.target.closest("a") : null;
+        if (a) setNav(false);
+      });
+    }
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape" && navState.open) setNav(false);
+    });
+    window.addEventListener("resize", function () {
+      if (navState.open && window.innerWidth >= 768) setNav(false);
+    });
   }
 
   function bindEvents() {
@@ -1827,10 +1911,12 @@
     });
 
     bindFilterMenus();
+    bindNav();
 
     window.addEventListener("hashchange", function () {
       closeSuggest();
       closeMenu();
+      setNav(false);
       var parsed = parseHash();
       if (sameState(parsed, state) && location.hash === currentHash()) return;
       Object.assign(state, parsed);
@@ -1858,6 +1944,8 @@
     if (st) st.innerHTML = ICON("search");
     var sc = document.getElementById("site-search-clear");
     if (sc) sc.innerHTML = ICON("x");
+    var nt = document.getElementById("nav-toggle");
+    if (nt) nt.innerHTML = ICON("menu");
   }
 
   function boot() {
