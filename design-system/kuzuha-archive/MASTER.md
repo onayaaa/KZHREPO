@@ -246,4 +246,5 @@ Before delivering any UI code, verify:
 3. **ヒートマップ用に heat-0..5 を追加**: `#171215 → #2c1119 → #4e1220 → #7c1229 → #b01235 → #ff3b5c`（黒 + 赤テーマに合わせて改訂）。数値は「表で見る」で必ず併記（色だけに依存しない）。
 4. **実装トークン**: `site/assets/css/site.css` の `:root`。`--line: rgba(225,29,72,.30)` は card 上の分割線用に Border `#7A1229` を透過させたもの。
 5. **配色を黒 + 赤へ変更（ユーザー指定 / 2026-11-26）**: Gaming パレットの紫 `#7C3AED` 系を廃止し、`primary #E11D48` / `secondary #FB7185` / `accent #FF3B5C` / `background #08070A` / `card #141114` / `border #7A1229` に置換した。トークンは `tokens.css` / `tokens.json` にも反映済み。バッジは「本配信 = 実心の赤」「切り抜き / Shorts = 中性色」で区別する。
+6. **DESIGN.md に沿って全面改訂（2026-11-27）**: 書体は Geist（`site/assets/fonts/geist-latin.woff2`）に統一し、この MASTER.md の Gaming 配色は**サイト本体では使っていない**。最終トークンは `site/assets/css/site.css` の `:root`：`--bg #0a0a0a` / `--bg-soft #121212` / `--ink #f2f2f2` / `--ink-2 #a8a8a8` / `--ink-3 #8a8a8a` / `--line #272727` / `--accent #e5484d`、ヒートマップは `#2b2b2b → #414141 → #5c5c5c → #7d7d7d → #a5a5a5 → e5484d`。グラデーション・影・ネオンは全廃、強調色は 1 色のみ、余白は 4px の倍数、角丸 8–40px、アイコンは Reicon（24 枠 / 1.5px）。
 

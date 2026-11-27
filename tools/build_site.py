@@ -435,6 +435,33 @@ def parse_songs(ws):
     return songs
 
 
+def normalize_date_text(text):
+    """大会の日付表記を YYYY.MM.DD（範囲は – 区切り）に統一する。"""
+    if not text:
+        return text
+    t = text.strip()
+    t = t.replace("年", ".").replace("月", ".").replace("日", "")
+    for sep in ("~", "〜", "～", ",", "，", "、"):
+        t = t.replace(sep, "–")
+    t = re.sub(r"\s+", " ", t)
+    t = re.sub(r"\s*\.\s*", ".", t)
+    t = re.sub(r"\s*–\s*", "–", t)
+
+    def pad(m):
+        y, mo, d = m.group(1), m.group(2), m.group(3)
+        return "{}.{:02d}.{:02d}".format(y, int(mo), int(d))
+
+    def pad_ym(m):
+        return "{}.{:02d}".format(m.group(1), int(m.group(2)))
+
+    t = re.sub(r"(\d{4})\.(\d{1,2})\.(\d{1,2})", pad, t)
+    t = re.sub(r"(\d{4})\.(\d{1,2})(?![\d.])", pad_ym, t)
+    t = re.sub(r"(?<![\d.])\.", "", t)  # 先頭などの孤立したドット
+    t = re.sub(r"\.{2,}", ".", t)
+    t = re.sub(r"[–.]+$", "", t)
+    return t.strip()
+
+
 def parse_events(ws):
     events = []
     for r in range(2, ws.max_row + 1):
@@ -450,6 +477,7 @@ def parse_events(ws):
         else:
             date_text = norm(raw)
             date_text = re.sub(r"\s+00:00:00$", "", date_text)
+            date_text = normalize_date_text(date_text)
         if not date_text and date:
             date_text = iso(date)
         events.append(
@@ -473,7 +501,8 @@ def parse_events(ws):
 def parse_goods(ws):
     out = []
     for r in range(2, ws.max_row + 1):
-        title = norm(ws.cell(r, 2).value)
+        cell = ws.cell(r, 2)
+        title = norm(cell.value)
         if not title:
             continue
         out.append(
@@ -482,6 +511,7 @@ def parse_goods(ws):
                 "t": title,
                 "k": norm(ws.cell(r, 3).value),
                 "n": norm(ws.cell(r, 4).value),
+                "u": canonical_url(cell_link(cell)),
             }
         )
     return out
@@ -727,10 +757,19 @@ def main():
     song_group = [x for x in streams if x["k"] == "live" and x["c"] in ("歌", "歌ってみた")]
     liveshow_group = [x for x in streams if x["k"] == "live" and x["c"] == "ライブ"]
     anken_group = [x for x in streams if x["k"] == "live" and x["c"] == "案件"]
+    # 「公式番組」「番組」「歌」は配信ではないので独立した種類にする
+    bangumi_group = [x for x in streams if x["k"] == "live" and x["c"] in ("公式番組", "番組")]
+    SONG_CONTENTS = ("歌", "歌ってみた")
+    BANGUMI_CONTENTS = ("公式番組", "番組")
+    live_only = [x for x in live if x["c"] not in BANGUMI_CONTENTS and x["c"] not in SONG_CONTENTS]
+    meta["counts"]["live"] = len(live_only)
+    meta["counts"]["hours"] = round(sum(s["m"] for s in live_only) / 60.0)
+
     CONTENT_TYPES = (
         ("song", song_group),
         ("liveshow", liveshow_group),
         ("anken", anken_group),
+        ("bangumi", bangumi_group),
     )
 
     stats = {
@@ -751,7 +790,7 @@ def main():
         "calendar": calendar,
         "games": games,
         "types": [
-            {"k": "live", "n": len(live), "h": round(sum(s["m"] for s in live) / 60.0, 1)},
+            {"k": "live", "n": len(live_only), "h": round(sum(s["m"] for s in live_only) / 60.0, 1)},
             {"k": "clip", "n": len(clips), "h": round(sum(s["m"] for s in clips) / 60.0, 1)},
             {"k": "short", "n": len(shorts), "h": round(sum(s["m"] for s in shorts) / 60.0, 1)},
         ] + [

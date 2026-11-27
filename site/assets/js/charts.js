@@ -1,13 +1,13 @@
 /* ==========================================================================
    葛葉 データアーカイブ — charts.js
-   SVG を手書きで生成する軽量チャート群（外部ライブラリなし）。
-   アクセシビリティ: 各要素に <title> と data-tip を付け、キーボードでも
-   ツールチップを表示できるようにしている（フォーカス可能な要素のみ）。
+   SVG 手描きのチャート群（外部ライブラリなし）。
+   配色: DESIGN.md に合わせ、灰階 + 単一の強調色のみ（グラデーションなし）。
    ========================================================================== */
 window.KZCharts = (function () {
   "use strict";
 
   var W = 820;
+  var ACCENT = "#c0182b";
 
   function esc(s) {
     return String(s == null ? "" : s)
@@ -15,6 +15,10 @@ window.KZCharts = (function () {
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
+  }
+
+  function T(key, vars) {
+    return window.KZI18N ? window.KZI18N.t(key, vars) : key;
   }
 
   function num(n, digits) {
@@ -59,8 +63,11 @@ window.KZCharts = (function () {
     });
     maxH = Math.max(40, Math.ceil(maxH / 50) * 50);
 
-    var padL = 42, padR = 14, padT = 16, padB = 30;
-    var height = 270;
+    var padL = 48;
+    var padR = 16;
+    var padT = 16;
+    var padB = 32;
+    var height = 280;
     var iw = W - padL - padR;
     var ih = height - padT - padB;
 
@@ -80,62 +87,68 @@ window.KZCharts = (function () {
       pts.push({ x: x(i), y: y(rec ? rec.lh : 0), rec: rec, yy: yy, mm: mm });
     }
 
-    var line = pts.map(function (p, idx) {
-      return (idx ? "L" : "M") + p.x.toFixed(1) + " " + p.y.toFixed(1);
-    }).join(" ");
-    var area = line +
-      " L" + x(span).toFixed(1) + " " + y(0) + " L" + x(0).toFixed(1) + " " + y(0) + " Z";
+    var line = pts
+      .map(function (p, idx) {
+        return (idx ? "L" : "M") + p.x.toFixed(1) + " " + p.y.toFixed(1);
+      })
+      .join(" ");
+    var area =
+      line + " L" + x(span).toFixed(1) + " " + y(0) + " L" + x(0).toFixed(1) + " " + y(0) + " Z";
 
     var ticks = [];
     var tickStep = maxH / 4;
     for (var t = 0; t <= 4; t++) ticks.push(Math.round(tickStep * t));
 
     var years = {};
-    rows.forEach(function (r) { years[r.y] = true; });
+    rows.forEach(function (r) {
+      years[r.y] = true;
+    });
 
-    var gridSvg = ticks.map(function (v) {
-      return (
-        '<line class="grid-line" x1="' + padL + '" x2="' + (W - padR) + '" y1="' + y(v).toFixed(1) +
-        '" y2="' + y(v).toFixed(1) + '"/>' +
-        '<text x="' + (padL - 8) + '" y="' + (y(v) + 3.5).toFixed(1) + '" text-anchor="end">' + num(v) + "h</text>"
-      );
-    }).join("");
+    var gridSvg = ticks
+      .map(function (v) {
+        return (
+          '<line class="grid-line" x1="' + padL + '" x2="' + (W - padR) + '" y1="' + y(v).toFixed(1) +
+          '" y2="' + y(v).toFixed(1) + '"/>' +
+          '<text x="' + (padL - 8) + '" y="' + (y(v) + 4).toFixed(1) + '" text-anchor="end">' + num(v) + "h</text>"
+        );
+      })
+      .join("");
 
-    var yearMarks = Object.keys(years).sort().map(function (yy) {
-      var idx = parseInt(yy, 10) * 12 + 1 - start;
-      if (idx < 0) return "";
-      var px = x(Math.min(idx, span));
-      return (
-        '<line class="grid-line" x1="' + px.toFixed(1) + '" x2="' + px.toFixed(1) + '" y1="' + padT +
-        '" y2="' + (padT + ih) + '"/>' +
-        '<text x="' + (px + 3).toFixed(1) + '" y="' + (height - 8) + '">' + yy + "</text>"
-      );
-    }).join("");
+    var yearMarks = Object.keys(years)
+      .sort()
+      .map(function (yy) {
+        var idx = parseInt(yy, 10) * 12 + 1 - start;
+        if (idx < 0) {
+          if (parseInt(yy, 10) !== first.y) return "";
+          idx = 0;
+        }
+        var px = x(Math.min(idx, span));
+        return (
+          '<line class="grid-line" x1="' + px.toFixed(1) + '" x2="' + px.toFixed(1) + '" y1="' + padT +
+          '" y2="' + (padT + ih) + '"/>' +
+          '<text x="' + (px + 4).toFixed(1) + '" y="' + (height - 10) + '">' + yy + "</text>"
+        );
+      })
+      .join("");
 
-    var dots = pts.map(function (p) {
-      if (!p.rec) return "";
-      var label = p.yy + "年" + p.mm + "月";
-      var tip = label + " / " + num(p.rec.lh, 1) + " 時間（" + num(p.rec.n) + " 本）";
-      return (
-        '<a href="#/streams?y=' + p.yy + '&m=' + p.mm + '" data-act="month" data-y="' + p.yy +
-        '" data-m="' + p.mm + '" tabindex="-1" aria-hidden="true">' +
-        '<circle class="dot" cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="2.6" ' +
-        'data-tip="' + esc(tip) + '"><title>' + esc(tip) + "</title></circle></a>"
-      );
-    }).join("");
+    var dots = pts
+      .map(function (p) {
+        if (!p.rec) return "";
+        var tip = T("chart.monthTip", { y: p.yy, m: p.mm, h: num(p.rec.lh, 1), n: num(p.rec.n) });
+        return (
+          '<a href="#/streams?y=' + p.yy + "&m=" + p.mm + '" data-act="month" data-y="' + p.yy +
+          '" data-m="' + p.mm + '" tabindex="-1" aria-hidden="true">' +
+          '<circle class="hit" cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="9"/>' +
+          '<circle class="dot" cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="3" ' +
+          'data-tip="' + esc(tip) + '"><title>' + esc(tip) + "</title></circle></a>"
+        );
+      })
+      .join("");
 
     el.innerHTML =
-      '<svg viewBox="0 0 ' + W + " " + height + '" role="img" aria-label="月別配信時間の推移（2018年から2026年）">' +
-      "<defs>" +
-      '<linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">' +
-      '<stop offset="0" stop-color="#7A1229"/><stop offset="0.55" stop-color="#E11D48"/><stop offset="1" stop-color="#FF8FA0"/>' +
-      "</linearGradient>" +
-      '<linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">' +
-      '<stop offset="0" stop-color="#E11D48" stop-opacity="0.34"/>' +
-      '<stop offset="1" stop-color="#E11D48" stop-opacity="0"/>' +
-      "</linearGradient>" +
-      "</defs>" +
-      gridSvg + yearMarks +
+      '<svg viewBox="0 0 ' + W + " " + height + '" role="img" aria-label="' + esc(T("chart.trend.aria")) + '">' +
+      gridSvg +
+      yearMarks +
       '<path class="series-area" d="' + area + '"/>' +
       '<path class="series-line" d="' + line + '"/>' +
       dots +
@@ -143,37 +156,42 @@ window.KZCharts = (function () {
   }
 
   /* --------------------------------------------------------- 年別バー */
-  function yearlyBars(el, yearly) {
+  function yearlyBars(el, yearly, currentYear) {
     if (!el || !yearly || !yearly.length) return;
-    var rows = yearly.filter(function (r) { return r.n; });
+    var rows = yearly.filter(function (r) {
+      return r.n;
+    });
+    if (!rows.length) return;
     var max = Math.max.apply(null, rows.map(function (r) { return r.h; }));
     max = Math.max(100, Math.ceil(max / 100) * 100);
-    var w = 78, gap = 14;
-    var padT = 14, padB = 32, padL = 8;
-    var height = 190;
+    var w = 72;
+    var gap = 20;
+    var padT = 16;
+    var padB = 32;
+    var padL = 8;
+    var height = 200;
     var ih = height - padT - padB;
     var width = Math.max(W, rows.length * (w + gap) + padL * 2);
 
-    var bars = rows.map(function (r, i) {
-      var h = (ih * r.h) / max;
-      var bx = padL + i * (w + gap) + gap / 2;
-      var by = padT + ih - h;
-      var tip = r.y + "年 / 合計 " + num(r.h, 0) + " 時間 / 配信 " + num(r.lh, 0) + " 時間 / " + num(r.n) + " 本";
-      return (
-        '<a href="#/streams?y=' + r.y + '" data-act="year" data-y="' + r.y + '" aria-label="' + esc(tip) + '">' +
-        '<rect class="bar" x="' + bx.toFixed(1) + '" y="' + by.toFixed(1) + '" width="' + w + '" height="' + h.toFixed(1) + '" rx="5" data-tip="' + esc(tip) + '"/>' +
-        '<text x="' + (bx + w / 2).toFixed(1) + '" y="' + (padT + ih + 15) + '" text-anchor="middle">' + r.y + "</text>" +
-        '<text x="' + (bx + w / 2).toFixed(1) + '" y="' + (by - 5).toFixed(1) + '" text-anchor="middle" style="fill:#C6B9BE">' + num(r.h, 0) + "</text>" +
-        "</a>"
-      );
-    }).join("");
+    var bars = rows
+      .map(function (r, i) {
+        var h = (ih * r.h) / max;
+        var bx = padL + i * (w + gap) + gap / 2;
+        var by = padT + ih - h;
+        var tip = T("chart.yearTip", { y: r.y, h: num(r.h, 0), lh: num(r.lh, 0), n: num(r.n) });
+        var cls = "bar" + (String(r.y) === String(currentYear) ? " is-on" : "");
+        return (
+          '<a href="#/streams?y=' + r.y + '" data-act="year" data-y="' + r.y + '" aria-label="' + esc(tip) + '">' +
+          '<rect class="' + cls + '" x="' + bx.toFixed(1) + '" y="' + by.toFixed(1) + '" width="' + w +
+          '" height="' + h.toFixed(1) + '" rx="8" data-tip="' + esc(tip) + '"/>' +
+          '<text x="' + (bx + w / 2).toFixed(1) + '" y="' + (padT + ih + 20) + '" text-anchor="middle">' + r.y + "</text>" +
+          "</a>"
+        );
+      })
+      .join("");
 
     el.innerHTML =
-      '<svg viewBox="0 0 ' + width + " " + height + '" role="img" aria-label="年別の配信時間">' +
-      "<defs>" +
-      '<linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">' +
-      '<stop offset="0" stop-color="#FF8FA0"/><stop offset="1" stop-color="#B01235"/>' +
-      "</linearGradient></defs>" +
+      '<svg viewBox="0 0 ' + width + " " + height + '" role="img" aria-label="' + esc(T("chart.yearly.aria")) + '">' +
       '<line class="axis-line" x1="0" x2="' + width + '" y1="' + (padT + ih) + '" y2="' + (padT + ih) + '"/>' +
       bars +
       "</svg>";
@@ -193,7 +211,7 @@ window.KZCharts = (function () {
     if (!el) return;
     var start = new Date(Date.UTC(year, 0, 1));
     var end = new Date(Date.UTC(year, 11, 31));
-    var startDow = start.getUTCDay(); // 0=日
+    var startDow = start.getUTCDay();
     var dayMs = 86400000;
     var totalDays = Math.round((end - start) / dayMs) + 1;
     var totalCells = startDow + totalDays;
@@ -218,49 +236,60 @@ window.KZCharts = (function () {
         var h = rec ? rec[0] : 0;
         var n = rec ? rec[1] : 0;
         if (h > maxH) maxH = h;
-        var label = dt.getUTCMonth() + 1 + "月" + dt.getUTCDate() + "日 " +
-          (n ? num(h, 1) + " 時間・" + num(n) + " 本" : "配信なし");
-        col += '<span class="heat-cell" aria-hidden="true" data-l="' + heatLevel(h) + '" data-tip="' +
-          esc(label) + '"' + (rec ? ' data-date="' + iso + '"' : "") + "></span>";
+        var label = T("chart.dayTip", {
+          y: year,
+          m: dt.getUTCMonth() + 1,
+          d: dt.getUTCDate(),
+          h: num(h, 1),
+          n: num(n),
+        });
+        var dayLabel = dt.getUTCDate();
+        col +=
+          '<span class="heat-cell" aria-hidden="true" data-l="' + heatLevel(h) + '"' +
+          (rec ? ' data-tip="' + esc(label) + '" data-date="' + iso + '"' : "") +
+          '><span class="sr-only">' + esc(dayLabel) + "</span></span>";
       }
       cols += '<div class="heat-col">' + col + "</div>";
     }
 
-    // 月ラベル（各月 1 日の週位置に配置）
     var monthLabels = "";
     for (var mi = 0; mi < 12; mi++) {
       var firstOfMonth = new Date(Date.UTC(year, mi, 1));
-      var dow = firstOfMonth.getUTCDay();
       var dayIdx = Math.round((firstOfMonth - start) / dayMs) + startDow;
       var wk = Math.floor(dayIdx / 7);
       monthLabels += '<span style="grid-column:' + (wk + 1) + '">' + (mi + 1) + "</span>";
     }
 
     el.innerHTML =
-      '<div class="heat-months" aria-hidden="true" style="grid-template-columns:repeat(' + weeks + ',12px);gap:3px">' +
-      monthLabels + "</div>" +
-      '<div class="heat-grid" role="img" aria-label="' + year +
-      '年の配信カレンダー。1 日ごとの配信時間を色の濃さで示しています。数値は下の「表で見る」を参照してください。" style="grid-template-columns:repeat(' +
-      weeks + ',12px)">' + cols + "</div>" +
-      '<div class="heat-legend"><span>すくない</span>' +
-      [0, 1, 2, 3, 4, 5].map(function (l) {
-        return '<span class="sw" style="background:var(--heat-' + l + ');border:1px solid rgba(148,163,184,.16)"></span>';
-      }).join("") +
-      '<span>おおい（1 日あたり ' + num(maxH, 1) + " 時間まで）</span></div>";
+      '<div class="heat-months" aria-hidden="true" style="grid-template-columns:repeat(' + weeks +
+      ',16px)">' + monthLabels + "</div>" +
+      '<div class="heat-grid" role="img" aria-label="' + esc(T("heat.aria", { y: year })) +
+      '" style="grid-template-columns:repeat(' + weeks + ',16px)">' + cols + "</div>" +
+      '<div class="heat-legend"><span>' + esc(T("heat.less")) + "</span>" +
+      [0, 1, 2, 3, 4, 5]
+        .map(function (l) {
+          return '<span class="sw" style="background:var(--heat-' + l + ')"></span>';
+        })
+        .join("") +
+      "<span>" + esc(T("heat.more", { h: num(maxH, 1) })) + "</span></div>";
   }
 
   /* ------------------------------------------------- 登録者数の推移ライン */
   function subscribers(el, subs) {
-    if (!el || !subs || subs.length < 2) {
-      if (el) el.innerHTML = '<p class="rail-note">登録者数の記録がありません。</p>';
+    if (!el) return;
+    if (!subs || subs.length < 2) {
+      el.innerHTML = '<p class="skeleton">' + esc(T("chart.subsEmpty")) + "</p>";
       return;
     }
     var rows = subs.slice().sort(function (a, b) {
       return a.d < b.d ? -1 : 1;
     });
     var maxN = rows[rows.length - 1].n;
-    var padL = 46, padR = 12, padT = 14, padB = 26;
-    var height = 200;
+    var padL = 48;
+    var padR = 16;
+    var padT = 16;
+    var padB = 28;
+    var height = 220;
     var iw = W - padL - padR;
     var ih = height - padT - padB;
     var t0 = new Date(rows[0].d).getTime();
@@ -276,31 +305,36 @@ window.KZCharts = (function () {
       };
     });
 
-    var line = pts.map(function (p, i) {
-      return (i ? "L" : "M") + p.x.toFixed(1) + " " + p.y.toFixed(1);
-    }).join(" ");
+    var line = pts
+      .map(function (p, i) {
+        return (i ? "L" : "M") + p.x.toFixed(1) + " " + p.y.toFixed(1);
+      })
+      .join(" ");
 
-    var ticks = [0, 0.25, 0.5, 0.75, 1].map(function (f) {
-      var v = maxN * f;
-      var txt = v >= 1000000 ? (v / 1000000).toFixed(2) + "M" : v >= 1000 ? Math.round(v / 1000) + "k" : Math.round(v);
-      return '<text x="' + (padL - 8) + '" y="' + (padT + ih - ih * f + 3.5).toFixed(1) + '" text-anchor="end">' + txt + "</text>" +
-        '<line class="grid-line" x1="' + padL + '" x2="' + (W - padR) + '" y1="' + (padT + ih - ih * f).toFixed(1) + '" y2="' + (padT + ih - ih * f).toFixed(1) + '"/>';
-    }).join("");
-
-    var dots = "";
+    var ticks = [0, 0.25, 0.5, 0.75, 1]
+      .map(function (f) {
+        var v = maxN * f;
+        var txt =
+          v >= 1000000 ? (v / 1000000).toFixed(2) + "M" : v >= 1000 ? Math.round(v / 1000) + "k" : Math.round(v);
+        return (
+          '<text x="' + (padL - 8) + '" y="' + (padT + ih - ih * f + 4).toFixed(1) + '" text-anchor="end">' + txt + "</text>" +
+          '<line class="grid-line" x1="' + padL + '" x2="' + (W - padR) + '" y1="' + (padT + ih - ih * f).toFixed(1) +
+          '" y2="' + (padT + ih - ih * f).toFixed(1) + '"/>'
+        );
+      })
+      .join("");
 
     el.innerHTML =
-      '<svg viewBox="0 0 ' + W + " " + height + '" role="img" aria-label="チャンネル登録者数の推移。折れ線にカーソルを合わせると、その日付の登録者数を表示します">' +
+      '<svg viewBox="0 0 ' + W + " " + height + '" role="img" aria-label="' + esc(T("chart.subs.aria")) + '">' +
       ticks +
-      '<path class="series-line" d="' + line + '" style="stroke:#FF8FA0;stroke-width:2.2"/>' +
+      '<path class="series-line" d="' + line + '" style="stroke-width:1.5"/>' +
       '<g class="sub-hover" aria-hidden="true">' +
-      '<line class="hover-line" x1="0" x2="0" y1="' + padT + '" y2="' + (padT + ih) + '" style="stroke:rgba(255,143,160,0.6);stroke-width:1;stroke-dasharray:3 3;opacity:0"/>' +
-      '<circle class="hover-dot" r="4" cx="0" cy="0" style="fill:#ff3b5c;stroke:#fff;stroke-width:1.4;opacity:0"/>' +
+      '<line class="hover-line" x1="0" x2="0" y1="' + padT + '" y2="' + (padT + ih) + '"/>' +
+      '<circle class="hover-dot" r="4" cx="0" cy="0"/>' +
       "</g>" +
-      '<rect class="hover-layer" x="' + padL + '" y="' + padT + '" width="' + iw + '" height="' + ih + '" fill="transparent" pointer-events="all"/>' +
-      "</svg>" +
-      '<div class="chart-legend"><span><i style="background:#FF8FA0"></i>登録者数（' + num(rows.length) + " 件の記録）</span>" +
-      "<span>線にカーソルを合わせると日付ごとの人数を表示</span></div>";
+      '<rect class="hover-layer" x="' + padL + '" y="' + padT + '" width="' + iw + '" height="' + ih +
+      '" fill="transparent" pointer-events="all"/>' +
+      "</svg>";
 
     var svg = el.querySelector ? el.querySelector("svg") : null;
     var layer = svg && svg.querySelector(".hover-layer");
@@ -309,8 +343,7 @@ window.KZCharts = (function () {
 
     function move(ev) {
       if (!svg || !hl || !hd) return;
-      // 文書レベルのツールチップ監視（[data-tip] 以外で hideTip）に潰されないよう、
-      // ここで止める。止めないと mousemove がバブリングして即座に非表示になる。
+      // 文書レベルのツールチップ監視に潰されないよう、ここで止める
       if (ev.stopPropagation) ev.stopPropagation();
       var box = svg.getBoundingClientRect();
       if (!box.width) return;
@@ -319,7 +352,10 @@ window.KZCharts = (function () {
       var bd = Infinity;
       pts.forEach(function (p) {
         var d = Math.abs(p.x - x);
-        if (d < bd) { bd = d; best = p; }
+        if (d < bd) {
+          bd = d;
+          best = p;
+        }
       });
       hl.setAttribute("x1", best.x.toFixed(1));
       hl.setAttribute("x2", best.x.toFixed(1));
@@ -327,7 +363,7 @@ window.KZCharts = (function () {
       hd.setAttribute("cx", best.x.toFixed(1));
       hd.setAttribute("cy", best.y.toFixed(1));
       hd.style.opacity = 1;
-      showText(best.r.d + " / " + num(best.r.n) + " 人", ev.clientX, ev.clientY);
+      showText(T("chart.subsTip", { d: best.r.d, n: num(best.r.n) }), ev.clientX, ev.clientY);
     }
 
     function leave() {
@@ -371,7 +407,8 @@ window.KZCharts = (function () {
     if (!box || !text) return;
     box.textContent = text;
     box.classList.add("is-on");
-    var x = clientX, y = clientY;
+    var x = clientX;
+    var y = clientY;
     if (x == null) {
       var r = target.getBoundingClientRect();
       x = r.left + r.width / 2;
@@ -419,5 +456,6 @@ window.KZCharts = (function () {
     num: num,
     hours: hours,
     esc: esc,
+    ACCENT: ACCENT,
   };
 })();

@@ -12,15 +12,18 @@ KZHREPO/
 ├─ kzhdata/                         数据源（只读，脚本不写回）
 │  └─ 葛葉仓库2018.xlsx … 2026.xlsx
 ├─ site/                              ← GitHub Pages 公开的就是这个目录
-│  ├─ index.html                     单页外壳
+│  ├─ index.html                     单页外壳（中日双语，ja 默认）
 │  ├─ 404.html / robots.txt / .nojekyll
 │  └─ assets/
-│     ├─ css/site.css                设计令牌 + 组件样式 + 自托管字体 @font-face
-│     ├─ fonts/*.woff2               拉丁字体（Russo One / Chakra Petch，共 37 KB）
+│     ├─ css/site.css                设计令牌 + 组件样式 + Geist @font-face
+│     ├─ fonts/geist-latin.woff2     拉丁可变字体（29 KB，自托管）
 │     ├─ js/app.js                   路由、筛选、渲染（IIFE，无依赖）
+│     ├─ js/i18n.js                  中日文案字典 + 语言切换
+│     ├─ js/icons.js                 Reicon 图标（构建产物，勿手改）
 │     ├─ js/charts.js                手写 SVG 图表（折线 / 柱 / 热力 / 登録者）
 │     └─ data/*.js                   生成数据（window.KZ.*）+ build-report.txt
 ├─ tools/build_site.py               xlsx → 站点数据（openpyxl）
+├─ tools/build_icons.mjs             从 npm reicon 生成 icons.js（node）
 ├─ .github/workflows/pages.yml       push 到 main/master 时重建并发布
 ├─ design-system/kuzuha-archive/     ui-ux-pro-max 产物（MASTER.md / tokens.css / tokens.json）
 └─ README.md / README.ja.md / MAINTAINER.md
@@ -80,7 +83,7 @@ KZHREPO/
 - 同一月份不要同时出现在两本年册（脚本按册子年份解析、跨文件不去重，会双份）；月份 sheet 必须放在同年册。
 - 更新后看三处：命令行计数、`build-report.txt` 第三节（差异突变）、第五节（无时长/无链接/ID 唯一=否）。
 
-当前结果：**5461 streams（4376 配信 / 983 切り抜き / 102 Shorts）、13817 h、375 歌（246 组）、213 大会企画、120 合集、220 グッズ、905 コラボ相手**；区间 2018-03-08〜2026-11-26。
+当前结果：**5465 streams（3774 配信 / 478 番組 / 985 切り抜き / 102 Shorts）、13677 h（配信のみ）、376 歌（246 组/126 唱）、214 大会企画、120 合集、221 グッズ、905 コラボ相手**；区间 2018-03-08〜2026-11-28。
 
 ## 4. 里程碑修正
 
@@ -98,13 +101,32 @@ KZHREPO/
 ## 5. 前端结构
 
 - `app.js`：hash 路由（`#/summary|streams|songs|events|collabs`）+ URL 状态 `?p=&y=&m=&c=&t=&r=&q=`；`ensureStreams()` 懒加载 1.84 MB 的 `streams.js`；所有点击走 document 级 `[data-act]` 委托。
-- `charts.js`：`KZCharts.trend / yearlyBars / heatmap / subscribers / installTooltips`，纯手写 SVG，无第三方库。
-- 筛选完全在前端内存里做（5461 条量级足够），改样式只动 `site.css`。
+- **筛选栏**（`#filter-bar`）：每个筛选项是一个 `.filter` 按钮 + `.filter-panel` 菜单，年月为二级菜单（`.filter-sub`）。多级菜单带开启延时 120ms、关闭延时 250ms 与安全三角区（`pointInTriangle`，鼠标从父项移向子菜单时保持打开）。
+- `i18n.js`：`window.KZI18N`，字典 `dict.ja / dict.zh`，`t(key, {var})` 插值；`localStorage["kz-lang"]` 记忆语言；`applyStatic()` 处理 `[data-i18n]`、`[data-i18n-aria]`、`[data-i18n-placeholder]`。**只翻译界面**，视频标题、人名、曲名、分类等数据字段保持日语原文。
+- `icons.js`：`window.KZ_ICON_DATA` + `window.KZIcon(name, cls)`，24×24 viewBox、1.5px 线条、`currentColor`。由 `tools/build_icons.mjs` 从 npm `reicon` 生成——加图标时改脚本里的名字列表再跑：
+  ```powershell
+  & 'C:\Users\xxx\.dsh\dsh-runtimes\dsh-primary-runtime\dependencies\node\bin\node.exe' tools/build_icons.mjs
+  ```
+- `charts.js`：`KZCharts.trend / yearlyBars / heatmap / subscribers / installTooltips`，纯手写 SVG，无第三方库、无渐变（深色实线 + 单一强调色）。
+- 筛选完全在前端内存里做（5465 条量级足够），改样式只动 `site.css`。
+- **配色**：黑底中性（`--bg #0a0a0a`、`--ink #f2f2f2`、`--line #272727`）+ 单一强调色 `--accent #e5484d`；热力图 6 档 `--heat-0..5` = `#2b2b2b #414141 #5c5c5c #7d7d7d #a5a5a5 #e5484d`（0 = 当天没有配信，明显可见但很暗）。全站无渐变、无阴影；`color-scheme: dark`。
+- **外部链接**：梗概页「公式リンク」只显示账号/频道名（`l.text`），不再叠加网站名；周边页商品名有超链接时渲染成 `.record-title a`（`goods` 数据里的 `u` 字段来自 xlsx B 列超链接）。
+- **コラボ相手页 CTA**：`data-act="partner"` 在 `route==="collabs" && state.p===v` 时改为 `navigate("streams",{p:...,其余清空})`，否则会把自己这个筛选 toggle 掉。
+- **热力图 tooltip**：用 `chart.dayTip`（`{y}年{m}月{d}日 / {h} 時間（{n} 本）`），与趋势图的 `chart.monthTip` 分开。
+- **筛选菜单第一行**：每个菜单的第一项固定为「すべて／全部」（`groupHtml` 里 `{ v: "", label: t("filter.all") }`），不要再留空标签。
+- **種類的划分**：`stats.types` 里 live / bangumi / song / clip / short 互斥，五者相加 = streams 总数（当前 3774 + 478 + 126 + 985 + 102 = 5465）；ライブ / 案件 是 live 的内容子类，与 live 重叠。`meta.counts.live` 与 `hours` 为**不含番組・歌**的口径，所以「配信の合計」= 13677 h。`公式番組` 与 `番組` 在 `typeLabelOf` 里都归为 `type.bangumi`；`歌` / `歌ってみた` 都归为 `type.song`。
+- **大会日期**：`tools/build_site.py` 的 `normalize_date_text()` 把 `2019年11月23日~24日` 统一成 `2019.11.23–24`（`~〜～,，` → `–`，月日补零），前端只显示 `dateText`；改源表写法后重跑构建即可。
+- **大会内容筛选**：events 页侧栏「内容」按 `e.content` 计数生成 chip（act `content` / key `c`），`handleAction` 在 `state.route==="events"` 时只 `setState`，不要 navigate 到 streams。
+- **概要页表格**：只保留「配信カレンダー」下的月度表（`heatTable`）；「月別の配信時間」下的重复月表已移除。数值列 `<th class="num">` 与 `td.num` 同为右对齐 + `tabular-nums`，否则表头与数字错位。
+- **不写「ソロ」**：组合/成员为空时留空（`take-unit`、`take-members`），卡片不再补「ソロ」标签；视频标题里原文出现的「ソロ」不动。
+- **卡片上的「ほか N 人」**：`.more-tags` 常显（不要加 hover 才出现的 opacity），点开显示全部共演者。
+- **书体切换**：`html:lang(zh)` 把 `--font` 换成 `--font-zh`（Noto Sans SC → Microsoft YaHei → PingFang SC …），避免中文用日文字形；数据文本（配信标题、人名、曲名、成绩、游戏名、備考）都带 `lang="ja"`，由 `html [lang="ja"] { font-family: var(--font-ja) }` 保持日文书体。新增数据字段的模板记得补 `lang="ja"`。
 
-## 6. 字体
+## 6. 字体与图标
 
-- 拉丁字体自托管（`site/assets/fonts/`），`index.html` 里已无任何 Google Fonts 外链。
-- 日文不下载 Web 字体：Noto Sans JP 一个权重就约 1.1 MB，改为 `Noto Sans JP → Hiragino Sans → Yu Gothic UI → Meiryo` 系统字体栈。
+- **Geist**（DESIGN.md 指定）：`site/assets/fonts/geist-latin.woff2`（可变字体，29 KB，latin 子集），`site.css` 顶部 `@font-face` + `--font` 首位。`index.html` 已无任何 Google Fonts 外链。
+- 日本語・中国語とも Web フォントは積まない（CJK 1 ウェイト約 1 MB）：`--font-ja` = Noto Sans JP → Hiragino Sans → Yu Gothic UI → Meiryo、`--font-zh` = Noto Sans SC → Microsoft YaHei → PingFang SC → Hiragino Sans GB のシステムフォントで使い分ける。
+- 图标：Reicon（`reicon@1.2.5`），本地生成，无 CDN 请求；线宽 1.5px，看板尺寸 24×24，显示时统一 `.icon` 18px。
 - 想换成 Web 字体：把 woff2 放进 `site/assets/fonts/`，在 `site.css` 顶部加 `@font-face` 并把对应变量前移即可。
 
 ## 7. 发布到 GitHub Pages
@@ -149,16 +171,16 @@ git push -u origin main
 
 ### 体积
 
-- 首屏（不含 `streams.js`）≈ 0.45 MB，gzip ≈ 110 KB；`streams.js` 1.84 MB，gzip 369 KB。
-- 字体 37 KB；封面直连 `i.ytimg.com`，不占仓库。
+- 首屏（不含 `streams.js`）≈ 0.5 MB，gzip ≈ 120 KB；`streams.js` 1.84 MB，gzip 369 KB。
+- 字体 29 KB + 图标 19 KB；封面直连 `i.ytimg.com`，不占仓库。
 - 仓库：xlsx 4.7 MB + site 2.33 MB。
 
 ## 8. 已知限制
 
 - 非官方数据；名字变体未合并（报告第七节列出只出现 1 次的 300 人）。
 - 「联动」表与站内自算时长口径不同，站内数字偏大。
-- 封面取自 YouTube `mqdefault`，非 YouTube 平台或视频失效时用渐变兜底。
-- 2026 年数据截止 2026-11-26。
+- 封面取自 YouTube `mqdefault`（320×180）；取不到时先试 `hqdefault`，仍失败则保留占位块。非 YouTube 平台的配信只有占位。
+- 2026 年数据截止 2026-11-28。
 
 ## 9. 改完后的自检
 
@@ -166,10 +188,14 @@ git push -u origin main
 # 语法
 & 'C:\Users\xxx\.dsh\dsh-runtimes\dsh-primary-runtime\dependencies\node\bin\node.exe' --check site/assets/js/app.js
 & 'C:\Users\xxx\.dsh\dsh-runtimes\dsh-primary-runtime\dependencies\node\bin\node.exe' --check site/assets/js/charts.js
+& 'C:\Users\xxx\.dsh\dsh-runtimes\dsh-primary-runtime\dependencies\node\bin\node.exe' --check site/assets/js/i18n.js
 # 重建 + 看报告
 & 'C:\Users\xxx\.dsh\dsh-runtimes\dsh-primary-runtime\dependencies\python\python.exe' tools/build_site.py
 # 本地打开
 & 'C:\Users\xxx\.dsh\dsh-runtimes\dsh-primary-runtime\dependencies\python\python.exe' -m http.server 8000 --directory site
 ```
 
-`site.css` 花括号数量平衡、页面无 `undefined`/`NaN` 出现，基本就没问题。
+- `site.css` 花括号数量平衡、页面无 `undefined`/`NaN` 出现，基本就没问题。
+- 改了文案：确认 `i18n.js` 里 ja / zh 两份字典键一致（`.tmp\i18n_check.js` 会扫 `t("…")` 与 `data-i18n` 是否缺键）。
+- 真实渲染回归：`.tmp\domtest` 下有 jsdom 脚本（`jsdom_test.js` / `menu_test.js` / `i18n_routes_test.js` / `fix_test.js`），需先 `python -m http.server 8899 --directory site`，再用捆绑 node 在该目录内执行。
+- 注意：不要用 PowerShell `Get-Content/Set-Content` 改含中文或日文的 UTF-8 文件（会按 GBK 重编码），只用编辑器/工具写。
