@@ -14,7 +14,7 @@
 
   /* 静的資産のキャッシュ版数（index.html の ?v= と揃える。
      前端ファイルを変更したら index.html とここを同時に +1 する） */
-  var ASSET_V = "10";
+  var ASSET_V = "11";
 
   function t(key, vars) {
     return I18N ? I18N.t(key, vars) : key;
@@ -1120,7 +1120,7 @@
       "</div>" +
       '<p class="record-sub">' +
       (e.content ? '<span><span class="k">' + esc(t("filter.content")) + '</span><span class="v">' + esc(e.content) + "</span></span>" : "") +
-      (e.team ? '<span><span class="k">' + esc(t("filter.unit")) + '</span><span class="v">' + esc(e.team) + "</span></span>" : "") +
+      (e.team ? '<span><span class="k">' + esc(t("field.team")) + '</span><span class="v">' + esc(e.team) + "</span></span>" : "") +
       (e.members.length ? '<span><span class="k">' + esc(t("filter.member")) + '</span><span class="v">' + esc(e.members.join("、")) + "</span></span>" : "") +
       (e.note ? '<span><span class="k">' + esc(t("field.note")) + '</span><span class="v">' + esc(e.note) + "</span></span>" : "") +
       "</p></li>"

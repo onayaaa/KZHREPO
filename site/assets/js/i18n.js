@@ -59,6 +59,7 @@ window.KZI18N = (function () {
       "filter.yearValue": "{y} 年",
       "filter.monthValue": "{m}月",
       "field.note": "備考",
+      "field.team": "チーム名",
 
       "tab.events": "大会・企画",
       "tab.goods": "イベント・グッズ",
@@ -247,6 +248,7 @@ window.KZI18N = (function () {
       "filter.yearValue": "{y} 年",
       "filter.monthValue": "{m}月",
       "field.note": "备注",
+      "field.team": "队伍名",
 
       "tab.events": "大会·企划",
       "tab.goods": "活动·周边",
