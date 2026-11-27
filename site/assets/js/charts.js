@@ -123,10 +123,12 @@ window.KZCharts = (function () {
           idx = 0;
         }
         var px = x(Math.min(idx, span));
+        var nearRight = px > W - 44;
         return (
           '<line class="grid-line" x1="' + px.toFixed(1) + '" x2="' + px.toFixed(1) + '" y1="' + padT +
           '" y2="' + (padT + ih) + '"/>' +
-          '<text x="' + (px + 4).toFixed(1) + '" y="' + (height - 10) + '">' + yy + "</text>"
+          '<text x="' + (nearRight ? px - 4 : px + 4).toFixed(1) + '" y="' + (height - 10) + '"' +
+          (nearRight ? ' text-anchor="end"' : "") + ">" + yy + "</text>"
         );
       })
       .join("");

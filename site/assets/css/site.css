@@ -88,6 +88,8 @@ html [lang="ja"] {
 html {
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
+  max-width: 100%;
+  overflow-x: hidden; /* 古い iOS は clip 非対応なので hidden を先に置く */
   overflow-x: clip;
 }
 
@@ -777,7 +779,7 @@ main {
   display: block;
   width: 100%;
   height: auto;
-  overflow: visible;
+  overflow: hidden; /* 旧 iOS で SVG の描画はみ出しが横スクロールを生むため */
 }
 
 .chart text {

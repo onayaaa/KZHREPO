@@ -14,7 +14,7 @@
 
   /* 静的資産のキャッシュ版数（index.html の ?v= と揃える。
      前端ファイルを変更したら index.html とここを同時に +1 する） */
-  var ASSET_V = "5";
+  var ASSET_V = "6";
 
   function t(key, vars) {
     return I18N ? I18N.t(key, vars) : key;
