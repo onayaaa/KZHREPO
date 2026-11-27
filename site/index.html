@@ -10,7 +10,7 @@
 <meta property="og:description" content="2018–2026 の配信・歌・大会・コラボ相手の記録。">
 <meta property="og:type" content="website">
 <link rel="preload" href="assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/css/site.css?v=7">
+<link rel="stylesheet" href="assets/css/site.css?v=8">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23f2f2f2'/%3E%3Cpath d='M10 9v14h4v-5.4l5.6 5.4H25l-6.9-6.6L24.6 9h-5L14 14.4V9z' fill='%230a0a0a'/%3E%3C/svg%3E">
 </head>
 <body>
@@ -66,47 +66,15 @@
 
 <div class="tooltip" id="tooltip" role="presentation" aria-hidden="true"></div>
 
-<div id="ovf-debug" hidden></div>
-<script>
-  (function () {
-    if (!/[?&]debug=1/.test(location.search)) return;
-    var box = document.getElementById("ovf-debug");
-    function scan() {
-      var de = document.documentElement;
-      var vw = de.clientWidth;
-      var rows = [];
-      var all = document.body.getElementsByTagName("*");
-      for (var i = 0; i < all.length; i++) {
-        var el = all[i];
-        if (el === box || box.contains(el)) continue;
-        var r = el.getBoundingClientRect();
-        if (!r.width && !r.height) continue;
-        if (r.right > vw + 1) {
-          var cls = (el.getAttribute("class") || "").trim().split(/\s+/).join(".");
-          rows.push({ t: el.tagName.toLowerCase() + (cls ? "." + cls : ""), right: Math.round(r.right), w: Math.round(r.width) });
-        }
-      }
-      rows.sort(function (a, b) { return b.right - a.right; });
-      var head = "vw=" + vw + " scrollW=" + de.scrollWidth + " bodyScrollW=" + document.body.scrollWidth + " vv=" + Math.round((window.visualViewport || {}).width || 0);
-      box.textContent = head + "\n" + rows.slice(0, 14).map(function (r) { return r.t + " → right " + r.right + " / w " + r.w; }).join("\n");
-      box.hidden = false;
-    }
-    box.style.cssText = "position:fixed;left:8px;right:8px;bottom:8px;z-index:9999;max-height:42vh;overflow:auto;background:#fff;color:#000;font:12px/1.5 ui-monospace,monospace;padding:8px;border-radius:10px;white-space:pre-wrap;text-align:left";
-    setTimeout(scan, 1500);
-    window.addEventListener("hashchange", function () { setTimeout(scan, 1200); });
-    window.addEventListener("resize", function () { setTimeout(scan, 400); });
-  })();
-</script>
-
-<script src="assets/js/i18n.js?v=7"></script>
-<script src="assets/js/icons.js?v=7"></script>
-<script src="assets/data/meta.js?v=7"></script>
-<script src="assets/data/stats.js?v=7"></script>
-<script src="assets/data/partners.js?v=7"></script>
-<script src="assets/data/songs.js?v=7"></script>
-<script src="assets/data/events.js?v=7"></script>
-<script src="assets/data/goods.js?v=7"></script>
-<script src="assets/js/charts.js?v=7"></script>
-<script src="assets/js/app.js?v=7"></script>
+<script src="assets/js/i18n.js?v=8"></script>
+<script src="assets/js/icons.js?v=8"></script>
+<script src="assets/data/meta.js?v=8"></script>
+<script src="assets/data/stats.js?v=8"></script>
+<script src="assets/data/partners.js?v=8"></script>
+<script src="assets/data/songs.js?v=8"></script>
+<script src="assets/data/events.js?v=8"></script>
+<script src="assets/data/goods.js?v=8"></script>
+<script src="assets/js/charts.js?v=8"></script>
+<script src="assets/js/app.js?v=8"></script>
 </body>
 </html>
