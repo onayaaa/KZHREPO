@@ -849,6 +849,61 @@ def main(argv=None):
         for n in sorted(game_counter, key=lambda n: (-game_hours[n], -game_counter[n]))
     ][:24]
 
+    # ゲーム別ページ用：配信以外の内容・複数タイトル併記を除いた一覧
+    NON_GAME = {
+        "",
+        "未分類",
+        "雑談",
+        "歌",
+        "歌ってみた",
+        "公式番組",
+        "番組",
+        "ライブ",
+        "案件",
+        "Twitter",
+        "宣伝",
+        "インタビュー",
+        "同時視聴",
+        "その他",
+    }
+    game_map = {}
+    for s in live:
+        name = s["c"]
+        if name in NON_GAME or "/" in name or len(name) > 40:
+            continue
+        g = game_map.setdefault(
+            name,
+            {"n": name, "s": 0, "h": 0.0, "l": "", "f": "", "y": defaultdict(lambda: [0, 0.0]), "p": defaultdict(lambda: [0, 0.0])},
+        )
+        g["s"] += 1
+        g["h"] += s["m"] / 60.0
+        yr = s["d"][:4]
+        g["y"][yr][0] += 1
+        g["y"][yr][1] += s["m"] / 60.0
+        if not g["l"] or s["d"] < g["l"]:
+            g["l"] = s["d"]
+        if s["d"] > g["f"]:
+            g["f"] = s["d"]
+        for nm in s["r"]:
+            g["p"][nm][0] += 1
+            g["p"][nm][1] += s["m"] / 60.0
+    games_detail = []
+    for g in sorted(game_map.values(), key=lambda x: (-x["h"], -x["s"]))[:60]:
+        games_detail.append(
+            {
+                "n": g["n"],
+                "s": g["s"],
+                "h": round(g["h"], 1),
+                "l": g["l"],
+                "f": g["f"],
+                "y": {k: [v[0], round(v[1], 1)] for k, v in sorted(g["y"].items())},
+                "p": [
+                    {"n": n, "s": v[0], "h": round(v[1], 1)}
+                    for n, v in sorted(g["p"].items(), key=lambda kv: (-kv[1][1], -kv[1][0]))[:8]
+                ],
+            }
+        )
+
     partner_map = defaultdict(
         lambda: {"n": "", "s": 0, "h": 0.0, "so": 0, "ev": 0, "l": "", "f": "", "y": defaultdict(lambda: [0, 0.0])}
     )
@@ -967,6 +1022,7 @@ def main(argv=None):
     write_js("songs.js", "songs", songs)
     write_js("events.js", "events", events)
     write_js("goods.js", "goods", goods)
+    write_js("games.js", "games", games_detail)
     write_js("streams.js", "streams", streams)
 
     # ----------------------------------------------------------------- report

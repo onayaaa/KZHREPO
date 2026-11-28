@@ -1,5 +1,5 @@
 葛葉仓库 2018-2026 → 站点数据 构建报告
-生成时间: 2026-11-27
+生成时间: 2026-11-28
 数据区间: 2018-03-08 〜 2026-11-28
 
 == 一、各文件解析情况 ==
@@ -78,7 +78,7 @@
 == 八、画像（og:image） ==
   グッズ: 取得 193 / リンク 220 件（全 221 件）
   大会・企画: 取得 126 / リンク 162 件（全 215 件）
-  今回の新規取得: 160 ページ
+  今回の新規取得: 0 ページ
   取得不可の主なホスト(グッズ): collabo.karaokemanekineko.jp=3, shop.nijisanji.jp=3, pubgmobile.jp=2, www.round1.co.jp=1, www.at-raku.com=1
   取得不可の主なホスト(大会): www.youtube.com=17, crcup.jp=14, vtuber-esports.jp=2, beast-cup.com=1, playpoints.withgoogle.com=1
   画像は各リンク先の og:image を保存し、ブラウザで直リンク表示（ダウンロードなし）。

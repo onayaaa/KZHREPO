@@ -14,7 +14,7 @@
 
   /* 静的資産のキャッシュ版数（index.html の ?v= と揃える。
      前端ファイルを変更したら index.html とここを同時に +1 する） */
-  var ASSET_V = "19";
+  var ASSET_V = "20";
 
   function t(key, vars) {
     return I18N ? I18N.t(key, vars) : key;
@@ -26,6 +26,7 @@
   var songs = KZ.songs || [];
   var events = KZ.events || [];
   var goods = KZ.goods || [];
+  var games = KZ.games || [];
   var streams = KZ.streams || null;
 
   var state = {
@@ -42,12 +43,13 @@
     heatYear: "",
     r: "",
     n: "",
+    g: "",
   };
 
   /* カード上で「ほか N 人」を押した配信（配信ID → 1） */
   var expandedTags = Object.create(null);
 
-  var routes = ["summary", "streams", "songs", "events", "collabs"];
+  var routes = ["summary", "streams", "songs", "events", "collabs", "games"];
 
   var RESULT_ORDER = ["champion", "runnerup", "third", "top10", "out", "host", "other", "unknown"];
 
@@ -132,7 +134,7 @@
 
   function hasFilters() {
     if (state.p && !(state.route === "events" && state.tab === "goods")) return true;
-    return !!(state.y || state.m || state.c || state.t || state.r || state.u || state.n || state.q);
+    return !!(state.y || state.m || state.c || state.t || state.r || state.u || state.n || state.q || state.g);
   }
 
   /* -------------------------------------------------------------- url/state */
@@ -143,7 +145,7 @@
     var query = qi < 0 ? "" : raw.slice(qi + 1);
     var out = {
       route: routes.indexOf(path) >= 0 ? path : "summary",
-      p: "", y: "", m: "", c: "", t: "", u: "", q: "", r: "", n: "",
+      p: "", y: "", m: "", c: "", t: "", u: "", q: "", r: "", n: "", g: "",
       sort: path === "collabs" ? "h" : "new",
       tab: "events",
       limit: 60,
@@ -166,7 +168,7 @@
     return (
       a.route === b.route && a.p === b.p && a.y === b.y && a.m === b.m &&
       a.c === b.c && a.t === b.t && a.q === b.q && a.tab === b.tab && a.r === b.r &&
-      a.u === b.u && a.n === b.n &&
+      a.u === b.u && a.n === b.n && a.g === b.g &&
       a.heatYear === b.heatYear
     );
   }
@@ -184,6 +186,7 @@
     if (state.route === "events" && state.tab !== "events") parts.push("tab=" + state.tab);
     if (state.route === "events" && state.r) parts.push("r=" + encodeURIComponent(state.r));
     if (state.route === "collabs" && state.sort !== "h") parts.push("sort=" + state.sort);
+    if (state.route === "games" && state.g) parts.push("g=" + encodeURIComponent(state.g));
     if (state.route === "summary" && state.heatYear) parts.push("hy=" + state.heatYear);
     return "#/" + state.route + (parts.length ? "?" + parts.join("&") : "");
   }
@@ -500,6 +503,21 @@
           .map(function (p) { return { v: p.n, n: p.s }; });
       }
       groups.push({ act: "partner", key: "p", label: t("filter.partner"), items: recent });
+      return groups;
+    }
+
+    if (state.route === "games") {
+      var gy = {};
+      games.forEach(function (g) {
+        Object.keys(g.y || {}).forEach(function (k) {
+          if (g.y[k] && g.y[k][0]) gy[k] = (gy[k] || 0) + 1;
+        });
+      });
+      var gys = Object.keys(gy)
+        .sort()
+        .reverse()
+        .map(function (k) { return { v: k, n: gy[k] }; });
+      groups.push({ act: "year", key: "y", label: t("filter.year"), items: gys });
       return groups;
     }
 
@@ -1006,6 +1024,7 @@
       return t(state.tab === "goods" ? "search.placeholder.goods" : "search.placeholder.events");
     }
     if (state.route === "collabs") return t("search.placeholder.collabs");
+    if (state.route === "games") return t("search.placeholder.games");
     return t("search.placeholder");
   }
 
@@ -1541,6 +1560,147 @@
     );
   }
 
+  /* --------------------------------------------------------------- games */
+  function gamesFiltered() {
+    var q = state.q.toLowerCase();
+    return games
+      .filter(function (g) {
+        if (q && g.n.toLowerCase().indexOf(q) < 0) return false;
+        if (state.y && !(g.y && g.y[state.y] && g.y[state.y][0])) return false;
+        return true;
+      })
+      .sort(function (a, b) {
+        var ha = state.y ? (a.y[state.y] || [0, 0])[1] : a.h;
+        var hb = state.y ? (b.y[state.y] || [0, 0])[1] : b.h;
+        return hb - ha;
+      });
+  }
+
+  function gameDetail(g) {
+    var y = state.y;
+    var stat = y ? g.y[y] || [0, 0] : [g.s, g.h];
+    var yKeys = Object.keys(g.y || {}).sort();
+    var maxY = 1;
+    yKeys.forEach(function (k) {
+      if (g.y[k][1] > maxY) maxY = g.y[k][1];
+    });
+    var miniBars = yKeys
+      .map(function (k) {
+        return (
+          '<div class="bar-row"><span class="b-name">' + k + "</span>" +
+          '<span class="b-track"><span class="b-fill" style="width:' +
+          Math.max(2, (g.y[k][1] / maxY) * 100).toFixed(1) + '%"></span></span>' +
+          '<span class="b-value">' + esc(hoursText(g.y[k][1], 0)) + "</span></div>"
+        );
+      })
+      .join("");
+
+    var yearItems = [{ v: "", label: t("partner.allYears") }].concat(
+      yKeys.slice().reverse().map(function (k) {
+        return { v: k, label: t("partner.yearOption", { y: k }) };
+      })
+    );
+
+    var recent = [];
+    if (streams) {
+      recent = streams
+        .filter(function (s) {
+          return s.k === "live" && s.c === g.n && (!y || s.d.slice(0, 4) === y);
+        })
+        .sort(function (a, b) { return a.d > b.d ? -1 : 1; })
+        .slice(0, 6);
+    }
+    var maxP = g.p && g.p.length ? g.p[0].h : 1;
+
+    return (
+      '<div class="page-head"><h1 lang="ja">' + esc(g.n) + "</h1>" +
+      (y ? '<span class="page-meta">' + esc(t("partner.yearOption", { y: y })) + "</span>" : "") + "</div>" +
+      '<div class="stat-line">' +
+      "<span>" + esc(t("game.liveCount")) + " <b>" + num(stat[0]) + "</b></span>" +
+      "<span>" + esc(t("game.hours")) + " <b>" + esc(hoursText(stat[1], 1)) + "</b></span>" +
+      "<span>" + esc(t("game.first")) + " <b>" + esc(fdate(g.l)) + "</b></span>" +
+      "<span>" + esc(t("game.last")) + " <b>" + esc(fdate(g.f)) + "</b></span>" +
+      "</div>" +
+      chipsHtml(yearItems, "year", state.y) +
+      '<div class="bar-list" style="margin-top:var(--s6)">' + miniBars + "</div>" +
+      '<div class="detail-actions">' +
+      '<button type="button" class="btn btn-primary" data-act="gamefilter" data-v="' + esc(g.n) + '">' +
+      esc(t("game.filter")) + "</button>" +
+      '<a class="btn-text" href="#/games">' + esc(t("game.back")) + "</a></div>" +
+      (g.p && g.p.length
+        ? '<section class="section"><div class="section-head"><h2>' + esc(t("game.topPartners")) + "</h2></div>" +
+          '<div class="partners">' +
+          g.p
+            .map(function (p) {
+              return (
+                '<a class="partner-row" href="' + partnerLink(p.n) + '">' +
+                '<span class="p-name" lang="ja">' + esc(p.n) + "</span>" +
+                '<span class="p-metrics">' + esc(hoursText(p.h, 1)) + " ・ " + num(p.s) + " " +
+                esc(t("unit.times")) + "</span>" +
+                '<span class="p-more"></span><span class="p-bar"><i style="width:' +
+                Math.max(2, (p.h / (maxP || 1)) * 100).toFixed(1) + '%"></i></span></a>'
+              );
+            })
+            .join("") +
+          "</div></section>"
+        : "") +
+      '<section class="section"><div class="section-head"><h2>' + esc(t("game.recent")) + "</h2>" +
+      '<span class="section-link">' +
+      esc(t("partner.recentCount", { total: num(stat[0]), shown: num(recent.length) })) +
+      "</span></div>" +
+      (recent.length
+        ? '<div class="card-grid">' + recent.map(streamCard).join("") + "</div>"
+        : '<p class="empty">' + esc(t("skeleton.streams")) + "</p>") +
+      "</section>"
+    );
+  }
+
+  function viewGames() {
+    var selected = null;
+    if (state.g) selected = games.filter(function (g) { return g.n === state.g; })[0] || null;
+    if (selected) return gameDetail(selected);
+
+    var list = gamesFiltered();
+    var shown = list.slice(0, state.limit);
+    var maxH = 1;
+    list.forEach(function (g) {
+      var h = state.y ? (g.y[state.y] || [0, 0])[1] : g.h;
+      if (h > maxH) maxH = h;
+    });
+    var rows = shown
+      .map(function (g) {
+        var s = state.y ? (g.y[state.y] || [0, 0])[0] : g.s;
+        var h = state.y ? (g.y[state.y] || [0, 0])[1] : g.h;
+        return (
+          '<a class="partner-row" href="#/games?g=' + encodeURIComponent(g.n) + (state.y ? "&y=" + state.y : "") + '">' +
+          '<span class="p-name" lang="ja">' + esc(g.n) + "</span>" +
+          '<span class="p-metrics">' + esc(hoursText(h, 1)) + " ・ " + num(s) + " " + esc(t("unit.times")) + "</span>" +
+          '<span class="p-more">' + esc(t("game.last")) + " " + esc(fdate(g.f)) + "</span>" +
+          '<span class="p-bar"><i style="width:' + Math.max(2, (h / maxH) * 100).toFixed(1) + '%"></i></span></a>'
+        );
+      })
+      .join("");
+
+    return (
+      pageHead("page.games") +
+      '<div class="toolbar">' + searchField(searchPlaceholder()) +
+      '<span class="count-line" aria-live="polite">' +
+      esc(
+        state.y
+          ? t("game.countYear", { y: state.y, total: num(list.length), shown: num(shown.length) })
+          : t("game.count", { total: num(list.length), shown: num(shown.length) })
+      ) +
+      "</span></div>" +
+      (list.length
+        ? '<div class="partners">' + rows + "</div>" +
+          (list.length > shown.length
+            ? '<button type="button" class="load-more" data-act="more">' +
+              esc(t("loadmore", { n: num(list.length - shown.length) })) + "</button>"
+            : "")
+        : emptyState(t("game.empty"), hasFilters()))
+    );
+  }
+
   /* --------------------------------------------------------------- render */
   function renderContent() {
     var view = document.getElementById("view");
@@ -1551,10 +1711,15 @@
     else if (state.route === "songs") html = viewSongs();
     else if (state.route === "events") html = viewEvents();
     else if (state.route === "collabs") html = viewCollabs();
+    else if (state.route === "games") html = viewGames();
     view.innerHTML = html;
 
     if (state.route === "summary") mountSummaryCharts();
-    if ((state.route === "streams" && !streams) || (state.route === "collabs" && state.p && !streams)) {
+    if (
+      (state.route === "streams" && !streams) ||
+      (state.route === "collabs" && state.p && !streams) ||
+      (state.route === "games" && state.g && !streams)
+    ) {
       ensureStreams()
         .then(render)
         .catch(function () {
@@ -1648,8 +1813,10 @@
       state.heatYear = v;
       syncUrl();
       renderContent();
+    } else if (act === "gamefilter") {
+      navigate("streams", { c: v, y: "", m: "", p: "", t: "", q: "", r: "", g: "" });
     } else if (act === "clear") {
-      Object.assign(state, { p: "", y: "", m: "", c: "", t: "", q: "", u: "", r: "", n: "", limit: 60 });
+      Object.assign(state, { p: "", y: "", m: "", c: "", t: "", q: "", u: "", r: "", n: "", g: "", limit: 60 });
       syncUrl();
       render();
     } else if (act === "more") {

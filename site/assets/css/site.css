@@ -728,6 +728,32 @@ main {
   fill: transparent;
 }
 
+/* 登録者数グラフの節目 */
+.chart .milestone {
+  pointer-events: none;
+}
+
+.chart .milestone-line {
+  stroke: var(--accent);
+  stroke-opacity: 0.35;
+  stroke-dasharray: 4 4;
+  stroke-width: 1;
+}
+
+.chart .milestone-dot {
+  fill: var(--accent);
+}
+
+.chart .milestone-value {
+  fill: var(--accent);
+  font-weight: 600;
+}
+
+.chart .milestone-date {
+  fill: var(--ink-3);
+  font-size: 10px;
+}
+
 .chart .hover-line {
   stroke: var(--ink-3);
   stroke-width: 1;
@@ -989,6 +1015,17 @@ main {
   .record.has-thumb .record-sub {
     grid-column: 1 / -1;
     grid-row: 3;
+  }
+}
+
+/* モバイルでは SVG が縮むぶん文字を大きめに */
+@media (max-width: 767px) {
+  .chart text {
+    font-size: 16px;
+  }
+
+  .chart .milestone-date {
+    font-size: 12px;
   }
 }
 

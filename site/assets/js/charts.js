@@ -9,6 +9,15 @@ window.KZCharts = (function () {
   var W = 820;
   var ACCENT = "#c0182b";
 
+  /* モバイルでは viewBox を画面幅に寄せて、文字が縮みすぎないようにする。 */
+  function viewW(min) {
+    var cw = W;
+    try {
+      cw = document.documentElement.clientWidth || window.innerWidth || W;
+    } catch (e) {}
+    return Math.max(min || 320, Math.min(W, cw - 48));
+  }
+
   function esc(s) {
     return String(s == null ? "" : s)
       .replace(/&/g, "&amp;")
@@ -63,12 +72,13 @@ window.KZCharts = (function () {
     });
     maxH = Math.max(40, Math.ceil(maxH / 50) * 50);
 
-    var padL = 48;
+    var CW = viewW(320);
+    var padL = CW < 560 ? 64 : 48;
     var padR = 16;
     var padT = 16;
     var padB = 32;
     var height = 280;
-    var iw = W - padL - padR;
+    var iw = CW - padL - padR;
     var ih = height - padT - padB;
 
     function x(i) {
@@ -107,7 +117,7 @@ window.KZCharts = (function () {
     var gridSvg = ticks
       .map(function (v) {
         return (
-          '<line class="grid-line" x1="' + padL + '" x2="' + (W - padR) + '" y1="' + y(v).toFixed(1) +
+          '<line class="grid-line" x1="' + padL + '" x2="' + (CW - padR) + '" y1="' + y(v).toFixed(1) +
           '" y2="' + y(v).toFixed(1) + '"/>' +
           '<text x="' + (padL - 8) + '" y="' + (y(v) + 4).toFixed(1) + '" text-anchor="end">' + num(v) + "h</text>"
         );
@@ -123,7 +133,7 @@ window.KZCharts = (function () {
           idx = 0;
         }
         var px = x(Math.min(idx, span));
-        var nearRight = px > W - 44;
+        var nearRight = px > CW - 44;
         return (
           '<line class="grid-line" x1="' + px.toFixed(1) + '" x2="' + px.toFixed(1) + '" y1="' + padT +
           '" y2="' + (padT + ih) + '"/>' +
@@ -148,7 +158,7 @@ window.KZCharts = (function () {
       .join("");
 
     el.innerHTML =
-      '<svg viewBox="0 0 ' + W + " " + height + '" role="img" aria-label="' + esc(T("chart.trend.aria")) + '">' +
+      '<svg viewBox="0 0 ' + CW + " " + height + '" role="img" aria-label="' + esc(T("chart.trend.aria")) + '">' +
       gridSvg +
       yearMarks +
       '<path class="series-area" d="' + area + '"/>' +
@@ -166,14 +176,16 @@ window.KZCharts = (function () {
     if (!rows.length) return;
     var max = Math.max.apply(null, rows.map(function (r) { return r.h; }));
     max = Math.max(100, Math.ceil(max / 100) * 100);
-    var w = 72;
-    var gap = 20;
+    var CW = viewW(320);
+    var narrow = CW < 560;
+    var w = narrow ? 36 : 72;
+    var gap = narrow ? 10 : 20;
     var padT = 16;
     var padB = 32;
     var padL = 8;
     var height = 200;
     var ih = height - padT - padB;
-    var width = Math.max(W, rows.length * (w + gap) + padL * 2);
+    var width = Math.max(CW, rows.length * (w + gap) + padL * 2);
 
     var bars = rows
       .map(function (r, i) {
@@ -296,12 +308,13 @@ window.KZCharts = (function () {
       return a.d < b.d ? -1 : 1;
     });
     var maxN = rows[rows.length - 1].n;
-    var padL = 48;
+    var CW = viewW(320);
+    var padL = CW < 560 ? 62 : 48;
     var padR = 16;
-    var padT = 16;
+    var padT = 22;
     var padB = 28;
     var height = 220;
-    var iw = W - padL - padR;
+    var iw = CW - padL - padR;
     var ih = height - padT - padB;
     var t0 = new Date(rows[0].d).getTime();
     var t1 = new Date(rows[rows.length - 1].d).getTime();
@@ -329,16 +342,42 @@ window.KZCharts = (function () {
           v >= 1000000 ? (v / 1000000).toFixed(2) + "M" : v >= 1000 ? Math.round(v / 1000) + "k" : Math.round(v);
         return (
           '<text x="' + (padL - 8) + '" y="' + (padT + ih - ih * f + 4).toFixed(1) + '" text-anchor="end">' + txt + "</text>" +
-          '<line class="grid-line" x1="' + padL + '" x2="' + (W - padR) + '" y1="' + (padT + ih - ih * f).toFixed(1) +
+          '<line class="grid-line" x1="' + padL + '" x2="' + (CW - padR) + '" y1="' + (padT + ih - ih * f).toFixed(1) +
           '" y2="' + (padT + ih - ih * f).toFixed(1) + '"/>'
         );
       })
       .join("");
 
+    var MARKS = [500000, 1000000, 1500000, 2000000];
+    var marks = "";
+    MARKS.forEach(function (M) {
+      var hit = null;
+      for (var i = 0; i < pts.length; i++) {
+        if (pts[i].r.n >= M) {
+          hit = pts[i];
+          break;
+        }
+      }
+      if (!hit) return;
+      var label = M / 10000 + "万";
+      var date = String(hit.r.d).slice(0, 7);
+      marks +=
+        '<g class="milestone" aria-hidden="true">' +
+        '<line class="milestone-line" x1="' + hit.x.toFixed(1) + '" x2="' + hit.x.toFixed(1) +
+        '" y1="' + (padT + ih) + '" y2="' + hit.y.toFixed(1) + '"/>' +
+        '<circle class="milestone-dot" cx="' + hit.x.toFixed(1) + '" cy="' + hit.y.toFixed(1) + '" r="3"/>' +
+        '<text class="milestone-value" x="' + hit.x.toFixed(1) + '" y="' +
+        Math.max(padT - 6, hit.y - 10).toFixed(1) + '" text-anchor="middle">' + label + "</text>" +
+        '<text class="milestone-date" x="' + hit.x.toFixed(1) + '" y="' +
+        Math.min(padT + ih - 4, hit.y + 18).toFixed(1) + '" text-anchor="middle">' + date + "</text>" +
+        "</g>";
+    });
+
     el.innerHTML =
-      '<svg viewBox="0 0 ' + W + " " + height + '" role="img" aria-label="' + esc(T("chart.subs.aria")) + '">' +
+      '<svg viewBox="0 0 ' + CW + " " + height + '" role="img" aria-label="' + esc(T("chart.subs.aria")) + '">' +
       ticks +
       '<path class="series-line" d="' + line + '" style="stroke-width:1.5"/>' +
+      marks +
       '<g class="sub-hover" aria-hidden="true">' +
       '<line class="hover-line" x1="0" x2="0" y1="' + padT + '" y2="' + (padT + ih) + '"/>' +
       '<circle class="hover-dot" r="4" cx="0" cy="0"/>' +
@@ -358,7 +397,7 @@ window.KZCharts = (function () {
       if (ev.stopPropagation) ev.stopPropagation();
       var box = svg.getBoundingClientRect();
       if (!box.width) return;
-      var x = (ev.clientX - box.left) * (W / box.width);
+      var x = (ev.clientX - box.left) * (CW / box.width);
       var best = pts[0];
       var bd = Infinity;
       pts.forEach(function (p) {

@@ -100,7 +100,7 @@ KZHREPO/
 
 ## 5. 前端结构
 
-- `app.js`：hash 路由（`#/summary|streams|songs|events|collabs`）+ URL 状态 `?p=&y=&m=&c=&t=&r=&q=`；`ensureStreams()` 懒加载 1.84 MB 的 `streams.js`；所有点击走 document 级 `[data-act]` 委托。
+- `app.js`：hash 路由（`#/summary|streams|songs|events|collabs|games`）+ URL 状态 `?p=&y=&m=&c=&t=&r=&q=&u=&n=&g=`；`ensureStreams()` 懒加载 1.84 MB 的 `streams.js`；所有点击走 document 级 `[data-act]` 委托。
 - **筛选栏**（`#filter-bar`）：每个筛选项是一个 `.filter` 按钮 + `.filter-panel` 菜单，年月为二级菜单（`.filter-sub`）。多级菜单带开启延时 120ms、关闭延时 250ms 与安全三角区（`pointInTriangle`，鼠标从父项移向子菜单时保持打开）。
 - `i18n.js`：`window.KZI18N`，字典 `dict.ja / dict.zh`，`t(key, {var})` 插值；`localStorage["kz-lang"]` 记忆语言；`applyStatic()` 处理 `[data-i18n]`、`[data-i18n-aria]`、`[data-i18n-placeholder]`。**只翻译界面**，视频标题、人名、曲名、分类等数据字段保持日语原文。
 - `icons.js`：`window.KZ_ICON_DATA` + `window.KZIcon(name, cls)`，24×24 viewBox、1.5px 线条、`currentColor`。由 `tools/build_icons.mjs` 从 npm `reicon` 生成——加图标时改脚本里的名字列表再跑：
@@ -131,7 +131,9 @@ KZHREPO/
 - **歌页活动筛选**：`songs[].n`（備考＝唱这首歌的活动）生成 `act:"event" / key:"n"` 的筛选组，URL 为 `#/songs?n=…`；`state.n` 要同时登记进 `parseHash` 默认值、`sameState`、`currentHash`、`hasFilters`、`handleAction`（`event` 分支）和 `clear`。没有備考的行只在不筛选时出现。
 - **移动端抽屉导航**：`#nav-toggle`（≤767px 才显示，Reicon `menu` 图标）+ `#nav-scrim` + `#site-nav.is-open`；`setNav(open)` 负责 class、`aria-expanded`、`body.is-nav-open`（锁滚动）、焦点进出；`bindNav()` 绑定汉堡、遮罩、导航链接、Esc、`resize`（≥768 自动关闭），`hashchange` 里也会 `setNav(false)`。
 - **封面**：`thumbFor()` 输出 `maxresdefault.jpg`（1280×720），`streamCard` 的 `onerror` 先换成 `hqdefault`、再失败就移除 `<img>` 露出占位层。高分屏清晰度依赖这一步，不要改回 `mqdefault`。
-- **资源版本串**：`index.html` 里 `site.css?v=N`、各 `*.js?v=N`，`app.js` 顶部的 `ASSET_V = "N"` 用于 `streams.js?v=`。**每次改前端资源后把两处同时 +1**（HTML 的 `?v=` 与 `ASSET_V`，当前为 14），否则浏览器可能拿到旧的 css/js，出现「只更新了一半」的假象。
+- **资源版本串**：`index.html` 里 `site.css?v=N`、各 `*.js?v=N`，`app.js` 顶部的 `ASSET_V = "N"` 用于 `streams.js?v=`。**每次改前端资源后把两处同时 +1**（HTML 的 `?v=` 与 `ASSET_V`，当前为 20），否则浏览器可能拿到旧的 css/js，出现「只更新了一半」的假象。
+- **ゲーム页**：`tools/build_site.py` 用非游戏桶（`NON_GAME`：雑談・歌・案件・公式番組・未分類 等）和含 `/` 的多标题合写过滤后，按总时长取前 60 生成 `site/assets/data/games.js`（`window.KZ.games`），每条含 `n/s/h/l/f`、`y`（年→[本数, 小时]）、`p`（Top8 共演者）。前端 `viewGames()` 是列表（`.partner-row` 复用），`gameDetail()` 仿コラボ相手个人页；`state.g` 要登记进 `parseHash`/`sameState`/`currentHash`/`hasFilters`/`clear`，CTA 用 `data-act="gamefilter"` → `navigate("streams",{c:g.n})`。
+- **图表自适应与里程碑**：`charts.js` 的 `viewW(min)` 按窗口宽度把 viewBox 收到 `min(820, clientWidth-48)`，窄屏（<560）同时加大左边距并减小柱宽；CSS 在 ≤767px 把 `.chart text` 提到 16px。登録者数折线用 `MARKS = [500000,1000000,1500000,2000000]` 找首次到达点，画虚线 + 点 + `50万` + `YYYY-MM`（`.milestone*`，`aria-hidden`），不要给它加交互事件。
 
 ## 6. 字体与图标
 
@@ -211,5 +213,5 @@ git push -u origin main
 
 - `site.css` 花括号数量平衡、页面无 `undefined`/`NaN` 出现，基本就没问题。
 - 改了文案：确认 `i18n.js` 里 ja / zh 两份字典键一致（`.tmp\i18n_check.js` 会扫 `t("…")` 与 `data-i18n` 是否缺键）。
-- 真实渲染回归：`.tmp\domtest` 下有 jsdom 脚本（`jsdom_test.js` / `menu_test.js` / `i18n_routes_test.js` / `fix_test.js` / `fix2_test.js`），需先 `python -m http.server 8899 --directory site`，再用捆绑 node 在该目录内执行。
+- 真实渲染回归：`.tmp\domtest` 下有 jsdom 脚本（`jsdom_test.js` / `menu_test.js` / `i18n_routes_test.js` / `fix_test.js` / `fix2_test.js` / `games_test.mjs` / `games_zh_test.mjs`），需先 `python -m http.server 8899 --directory site`，再用捆绑 node 在该目录内执行。
 - 注意：不要用 PowerShell `Get-Content/Set-Content` 改含中文或日文的 UTF-8 文件（会按 GBK 重编码），只用编辑器/工具写。
